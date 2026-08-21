@@ -10,6 +10,7 @@ Loom 的 MVP 目标是：通过 Codex 创建或语义修改一张 2.5D 等轴逻
 4. `AI Native 3D Diagram Workspace MVP 实施计划文档.md`：Gate、Golden Journey、停止条件和验收顺序。
 5. `issues/modules/`：准备发布到 GitHub 的一个 Parent Issue 与 M0–M8 模块 Sub-issue 正文。
 6. `issues/MVP 原子 Issue 规划.md`：模块通过后继续向下拆分的 21 个原子 Issue 草案。
+7. `issues/atomic/README.md`：M0–M8 下一层的 45 个统一抽象原子 Issue 目录。
 
 ## Gate 0 契约
 

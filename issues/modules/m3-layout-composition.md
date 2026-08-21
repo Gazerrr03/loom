@@ -47,5 +47,6 @@ Golden fixture 已手工记录双 A4 页面、safe area、节点位置和示例 
 
 ## 关联
 
-- 依赖：M0 Golden Case、M1 Diagram Artifact。
-- 被依赖：M4 Renderer、M5 Workspace、M6 Codex / MCP、M8。
+- Parent：#1。
+- 依赖：#2 Golden Case、#3 Diagram Artifact。
+- 被依赖：#6 Renderer、#7 Workspace、#8 Codex / MCP、#10。

@@ -53,5 +53,6 @@ Renderer 接收 Core 生成的只读 RenderDocument，呈现 Scene Node、路线
 
 ## 关联
 
-- 依赖：M0、M1、M2、M3。
-- 被依赖：M5 Workspace、M7 PNG 导出、M8。
+- Parent：#1。
+- 依赖：#2、#3、#4、#5。
+- 被依赖：#7 Workspace、#9 PNG 导出、#10。

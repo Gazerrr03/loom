@@ -49,5 +49,6 @@
 
 ## 关联
 
-- 依赖：M1 Diagram Artifact、M2 Component Template、M3 Layout、M4 Renderer。
-- 被依赖：M7 PNG 导出、M8 端到端验收。
+- Parent：#1。
+- 依赖：#3 Diagram Artifact、#4 Component Template、#5 Layout、#6 Renderer。
+- 被依赖：#9 PNG 导出、#10 端到端验收。

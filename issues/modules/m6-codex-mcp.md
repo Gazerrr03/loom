@@ -49,6 +49,7 @@ Codex 可以创建、打开、摘要、校验和保存 Diagram，查询 Componen
 
 ## 关联
 
-- 依赖：M1 Diagram Artifact、M2 Component Template、M3 Layout。
-- 与 M5 Workspace 可并行推进，最终在 M8 汇合。
-- 被依赖：M8 端到端验收。
+- Parent：#1。
+- 依赖：#3 Diagram Artifact、#4 Component Template、#5 Layout。
+- 与 #7 Workspace 可并行推进，最终在 #10 汇合。
+- 被依赖：#10 端到端验收。

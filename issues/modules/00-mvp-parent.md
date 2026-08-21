@@ -21,15 +21,15 @@ MVP 有两个协作表面：Codex 负责自然语言创建、理解和语义修�
 
 | 模块 | 完成后实现的结果 | 主要依赖 |
 |---|---|---|
-| M0 Golden Case | 团队使用同一案例和质量标准判断结果是否成立 | 无 |
-| M1 Diagram Artifact | 图可以安全创建、保存、校验和重新打开 | M0 |
-| M2 Component Template | Codex 与 Workspace 能按语义找到并替换 3D 形态 | M0、M1 |
-| M3 Layout & Composition | 自动生成双 A4 构图，并保留用户手工调整 | M0、M1 |
-| M4 Renderer | 同一图文件可被呈现为可替换的 2.5D 等轴场景 | M1、M2、M3 |
-| M5 Workspace UI | 用户能直接编辑节点、路线和标注，并撤销重做 | M1、M4 |
-| M6 Codex / MCP | 用户能用自然语言创建和修改已有 Diagram | M1、M2、M3 |
-| M7 PNG 导出 | 当前构图能输出为作品集可用 PNG | M4、M5 |
-| M8 端到端验收 | 干净环境可重复完成创建、编辑、再修改和导出 | M0–M7 |
+| #2 · M0 Golden Case | 团队使用同一案例和质量标准判断结果是否成立 | 无 |
+| #3 · M1 Diagram Artifact | 图可以安全创建、保存、校验和重新打开 | #2 |
+| #4 · M2 Component Template | Codex 与 Workspace 能按语义找到并替换 3D 形态 | #2、#3 |
+| #5 · M3 Layout & Composition | 自动生成双 A4 构图，并保留用户手工调整 | #2、#3 |
+| #6 · M4 Renderer | 同一图文件可被呈现为可替换的 2.5D 等轴场景 | #2、#3、#4、#5 |
+| #7 · M5 Workspace UI | 用户能直接编辑节点、路线和标注，并撤销重做 | #3、#4、#5、#6 |
+| #8 · M6 Codex / MCP | 用户能用自然语言创建和修改已有 Diagram | #3、#4、#5 |
+| #9 · M7 PNG 导出 | 当前构图能输出为作品集可用 PNG | #2、#6、#7 |
+| #10 · M8 端到端验收 | 干净环境可重复完成创建、编辑、再修改和导出 | #2–#9 |
 
 ## 整体验收标准
 

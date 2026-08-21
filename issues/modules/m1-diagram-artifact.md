@@ -47,5 +47,6 @@ Codex 和 Workspace 都通过 Diagram Core 读取或修改同一份文件。Core
 
 ## 关联
 
-- 依赖：M0 Golden Case。
-- 被依赖：M2、M3、M4、M5、M6、M8。
+- Parent：#1。
+- 依赖：#2 Golden Case。
+- 被依赖：#4、#5、#6、#7、#8、#10。

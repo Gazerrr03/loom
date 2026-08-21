@@ -50,5 +50,6 @@
 
 ## 关联
 
-- 依赖：M0–M7 全部模块。
-- 关闭本 Issue 后，MVP Parent Issue 才具备关闭条件。
+- Parent：#1。
+- 依赖：#2–#9 全部模块。
+- 关闭本 Issue 后，#1 MVP Parent Issue 才具备关闭条件。

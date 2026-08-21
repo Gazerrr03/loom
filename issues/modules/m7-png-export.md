@@ -48,5 +48,6 @@
 
 ## 关联
 
-- 依赖：M0 Golden Case、M4 Renderer、M5 Workspace。
-- 被依赖：M8 端到端验收。
+- Parent：#1。
+- 依赖：#2 Golden Case、#6 Renderer、#7 Workspace。
+- 被依赖：#10 端到端验收。

@@ -1,6 +1,6 @@
 # Loom MVP 原子 Issue 编号索引
 
-远端仓库：[Gazerrr03/loom](https://github.com/Gazerrr03/loom)  
+远端仓库：[Gazerrr03/loom](https://github.com/Gazerrr03/loom)
 Parent：[Issue #1](https://github.com/Gazerrr03/loom/issues/1)
 
 ## M0 · Golden Case（父 Issue #2）

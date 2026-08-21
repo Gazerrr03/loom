@@ -50,3 +50,13 @@ Codex 和 Workspace 都通过 Diagram Core 读取或修改同一份文件。Core
 - Parent：#1。
 - 依赖：#2 Golden Case。
 - 被依赖：#4、#5、#6、#7、#8、#10。
+
+## 原子 Sub-issues
+
+- #14 `M1-01` 文件信封：定义 Diagram 文件的版本与根结构
+- #15 `M1-02` 语义图：定义 Node、Edge、Group 的引用模型
+- #16 `M1-03` 构图空间：定义单位、画布、页面、安全区和默认视图
+- #17 `M1-04` 布局分层：定义 Generated、Override 与 Effective Layout 的合并规则
+- #18 `M1-05` 表现边界：定义 Annotation、Presentation 与 Asset Reference 的归属
+- #19 `M1-06` 校验错误：定义字段路径、对象 ID 与恢复建议的错误结构
+- #20 `M1-07` 文件持久化：定义创建、加载、原子保存和往返一致性

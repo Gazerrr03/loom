@@ -52,3 +52,11 @@ Codex 可以按自然语言与节点类型查询模板，并看到匹配原因�
 - Parent：#1。
 - 依赖：#2 Golden Case、#3 Diagram Artifact。
 - 被依赖：#6 Renderer、#7 Workspace、#8 Codex / MCP、#10。
+
+## 原子 Sub-issues
+
+- #21 `M2-01` 模板身份：定义 Component Template 的语义身份与检索字段
+- #22 `M2-02` 参数契约：定义模板参数、默认值与参数校验
+- #23 `M2-03` 渲染映射：定义模板能力、Renderer Mapping 与 fallback
+- #24 `M2-04` 资产引用：定义内置原语、用户模型与授权元数据的引用
+- #25 `M2-05` 状态模板：固定 Flovvas 七个阶段的参数化模板集合

@@ -52,3 +52,11 @@
 - Parent：#1。
 - 依赖：#3 Diagram Artifact、#4 Component Template、#5 Layout、#6 Renderer。
 - 被依赖：#9 PNG 导出、#10 端到端验收。
+
+## 原子 Sub-issues
+
+- #38 `M5-01` 编辑会话：定义 Workspace 的加载、选中、脏状态与保存状态
+- #39 `M5-02` 选择上下文：定义对象选择、Inspector 与组件替换上下文
+- #40 `M5-03` 变换命令：定义节点移动、旋转、缩放、elevation 与层级操作
+- #41 `M5-04` 覆盖层命令：定义路线控制点与标注编辑操作
+- #42 `M5-05` 历史事务：定义一次手势对应一个 Undo/Redo 事务

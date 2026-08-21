@@ -56,3 +56,13 @@ Renderer 接收 Core 生成的只读 RenderDocument，呈现 Scene Node、路线
 - Parent：#1。
 - 依赖：#2、#3、#4、#5。
 - 被依赖：#7 Workspace、#9 PNG 导出、#10。
+
+## 原子 Sub-issues
+
+- #31 `M4-01` 渲染输入：定义 RenderDocument 的解析结果
+- #32 `M4-02` 能力协商：定义 Adapter 加载前的能力声明与缺失处理
+- #33 `M4-03` 场景投影：定义 Template、Layout 到 Scene Node 的可见投影
+- #34 `M4-04` 覆盖层：定义 Route、Phase Zone 与 Annotation 的跟随关系
+- #35 `M4-05` 预览提交：定义交互预览与 Domain Command 提交边界
+- #36 `M4-06` 参考渲染：让 Reference Renderer 通过 Golden Case 视觉纵切
+- #37 `M4-07` iCraft 验证：记录 iCraft 程序化能力与授权结论

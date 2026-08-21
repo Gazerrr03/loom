@@ -53,3 +53,11 @@ Codex 可以创建、打开、摘要、校验和保存 Diagram，查询 Componen
 - 依赖：#3 Diagram Artifact、#4 Component Template、#5 Layout。
 - 与 #7 Workspace 可并行推进，最终在 #10 汇合。
 - 被依赖：#10 端到端验收。
+
+## 原子 Sub-issues
+
+- #43 `M6-01` 工具信封：定义 MCP Tool 输入、输出与错误的统一结构
+- #44 `M6-02` 生命周期工具：定义 Diagram 创建、打开、校验与保存工具
+- #45 `M6-03` 组件查询：定义按语义查询和读取 Component Template 的工具
+- #46 `M6-04` 语义命令：定义 Node、Edge、Group、Annotation 的原子修改
+- #47 `M6-05` 修改事务：定义 dry-run、提交和 Override 保留的语义边界

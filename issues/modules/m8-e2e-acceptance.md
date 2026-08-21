@@ -53,3 +53,10 @@
 - Parent：#1。
 - 依赖：#2–#9 全部模块。
 - 关闭本 Issue 后，#1 MVP Parent Issue 才具备关闭条件。
+
+## 原子 Sub-issues
+
+- #52 `M8-01` 本地运行：定义干净环境的安装、启动与连接验收
+- #53 `M8-02` 创建旅程：验证真实 Codex 请求创建 Diagram
+- #54 `M8-03` 往返旅程：验证 Workspace 与 Codex 交替修改并保留 Override
+- #55 `M8-04` 关闭标准：汇总构建、测试、引用完整性和作品集 PNG 的 MVP 关闭条件

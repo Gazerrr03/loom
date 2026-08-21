@@ -50,3 +50,11 @@ Golden fixture 已手工记录双 A4 页面、safe area、节点位置和示例 
 - Parent：#1。
 - 依赖：#2 Golden Case、#3 Diagram Artifact。
 - 被依赖：#6 Renderer、#7 Workspace、#8 Codex / MCP、#10。
+
+## 原子 Sub-issues
+
+- #26 `M3-01` 坐标空间：定义 Diagram 坐标、页面坐标与视图坐标的边界
+- #27 `M3-02` 构图约束：定义 Spread、gutter、phase zone 与主次路径约束
+- #28 `M3-03` 生成位置：定义从语义图到稳定 Generated Layout 的输出
+- #29 `M3-04` 路线锚点：定义 Route Control Point 与 Annotation Anchor 的坐标模型
+- #30 `M3-05` 局部重排：定义新增或重排时保留 Override 的局部行为

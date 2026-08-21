@@ -1,0 +1,263 @@
+{
+  "format": "loom.diagram",
+  "schemaVersion": "0.1.0",
+  "id": "flovvas-massing-golden-case",
+  "metadata": {
+    "title": "Flovvas — From Conversation to Compounding Workspace",
+    "description": "Golden Case for a two-page isometric product-evolution diagram.",
+    "author": "Qizhi Dong",
+    "createdAt": "2026-08-21T00:00:00+08:00",
+    "updatedAt": "2026-08-21T00:00:00+08:00"
+  },
+  "semantic": {
+    "diagramFamily": "logical-product-evolution",
+    "nodes": [
+      {
+        "id": "stage-line",
+        "type": "product-stage",
+        "label": "LINE",
+        "description": "Linear conversation as an ephemeral stream.",
+        "componentRef": "flovvas-line",
+        "visualRole": "main-stage",
+        "phase": "conversation",
+        "properties": { "sequence": 1, "cardCount": 6 }
+      },
+      {
+        "id": "stage-branch",
+        "type": "product-stage",
+        "label": "BRANCH",
+        "description": "Parallel exploration splits from one line.",
+        "componentRef": "flovvas-branch",
+        "visualRole": "main-stage",
+        "phase": "exploration",
+        "properties": { "sequence": 2, "branchCount": 3 }
+      },
+      {
+        "id": "stage-card",
+        "type": "product-stage",
+        "label": "CARD",
+        "description": "A thought becomes an operable unit.",
+        "componentRef": "flovvas-card",
+        "visualRole": "main-stage",
+        "phase": "exploration",
+        "properties": { "sequence": 3, "detached": true }
+      },
+      {
+        "id": "stage-field",
+        "type": "product-stage",
+        "label": "FIELD",
+        "description": "Relationships between thought units become visible.",
+        "componentRef": "flovvas-field",
+        "visualRole": "main-stage",
+        "phase": "structure",
+        "properties": { "sequence": 4, "columns": 4, "rows": 3 }
+      },
+      {
+        "id": "stage-archive",
+        "type": "product-stage",
+        "label": "ARCHIVE",
+        "description": "Selected thought units persist as knowledge.",
+        "componentRef": "flovvas-archive",
+        "visualRole": "main-stage",
+        "phase": "knowledge",
+        "properties": { "sequence": 5, "levels": 4 }
+      },
+      {
+        "id": "stage-context",
+        "type": "product-stage",
+        "label": "CONTEXT",
+        "description": "Stored knowledge becomes reusable working context.",
+        "componentRef": "flovvas-context",
+        "visualRole": "main-stage",
+        "phase": "knowledge",
+        "properties": { "sequence": 6, "layers": 3 }
+      },
+      {
+        "id": "stage-workbench",
+        "type": "product-stage",
+        "label": "WORKBENCH",
+        "description": "Context recombines into a compounding workspace.",
+        "componentRef": "flovvas-workbench",
+        "visualRole": "main-stage",
+        "phase": "workspace",
+        "properties": { "sequence": 7, "modules": 5 }
+      },
+      {
+        "id": "alt-chat-only",
+        "type": "alternative-path",
+        "label": "Chat-only",
+        "componentRef": "generic-card-slab",
+        "visualRole": "alternative",
+        "phase": "conversation",
+        "properties": { "outcome": "evaporates" }
+      },
+      {
+        "id": "alt-board-only",
+        "type": "alternative-path",
+        "label": "Board-only",
+        "componentRef": "generic-card-slab",
+        "visualRole": "alternative",
+        "phase": "structure",
+        "properties": { "outcome": "relationships without memory" }
+      },
+      {
+        "id": "alt-storage-only",
+        "type": "alternative-path",
+        "label": "Storage-only",
+        "componentRef": "generic-card-slab",
+        "visualRole": "alternative",
+        "phase": "knowledge",
+        "properties": { "outcome": "memory without recombination" }
+      },
+      {
+        "id": "input-human-intent",
+        "type": "external-input",
+        "label": "Human intent",
+        "componentRef": "generic-input-plinth",
+        "visualRole": "external-input",
+        "properties": {}
+      },
+      {
+        "id": "input-agent-output",
+        "type": "external-input",
+        "label": "Agent output",
+        "componentRef": "generic-input-plinth",
+        "visualRole": "external-input",
+        "properties": {}
+      },
+      {
+        "id": "input-files",
+        "type": "external-input",
+        "label": "Files",
+        "componentRef": "generic-input-plinth",
+        "visualRole": "external-input",
+        "properties": {}
+      },
+      {
+        "id": "input-links",
+        "type": "external-input",
+        "label": "Links",
+        "componentRef": "generic-input-plinth",
+        "visualRole": "external-input",
+        "properties": {}
+      },
+      {
+        "id": "input-prior-context",
+        "type": "external-input",
+        "label": "Prior context",
+        "componentRef": "generic-input-plinth",
+        "visualRole": "external-input",
+        "properties": {}
+      }
+    ],
+    "edges": [
+      { "id": "edge-split", "source": "stage-line", "target": "stage-branch", "type": "transformation", "label": "SPLIT", "visualRole": "main-flow", "properties": {} },
+      { "id": "edge-extract", "source": "stage-branch", "target": "stage-card", "type": "transformation", "label": "EXTRACT", "visualRole": "main-flow", "properties": {} },
+      { "id": "edge-connect", "source": "stage-card", "target": "stage-field", "type": "transformation", "label": "CONNECT", "visualRole": "main-flow", "properties": {} },
+      { "id": "edge-store", "source": "stage-field", "target": "stage-archive", "type": "transformation", "label": "STORE", "visualRole": "main-flow", "properties": {} },
+      { "id": "edge-layer", "source": "stage-archive", "target": "stage-context", "type": "transformation", "label": "LAYER", "visualRole": "main-flow", "properties": {} },
+      { "id": "edge-recombine", "source": "stage-context", "target": "stage-workbench", "type": "transformation", "label": "RECOMBINE", "visualRole": "main-flow", "properties": {} },
+      { "id": "edge-alt-chat", "source": "stage-line", "target": "alt-chat-only", "type": "alternative", "visualRole": "alternative", "properties": {} },
+      { "id": "edge-alt-board", "source": "stage-field", "target": "alt-board-only", "type": "alternative", "visualRole": "alternative", "properties": {} },
+      { "id": "edge-alt-storage", "source": "stage-archive", "target": "alt-storage-only", "type": "alternative", "visualRole": "alternative", "properties": {} },
+      { "id": "edge-input-intent", "source": "input-human-intent", "target": "stage-line", "type": "input", "visualRole": "external-input", "properties": {} },
+      { "id": "edge-input-agent", "source": "input-agent-output", "target": "stage-card", "type": "input", "visualRole": "external-input", "properties": {} },
+      { "id": "edge-input-files", "source": "input-files", "target": "stage-field", "type": "input", "visualRole": "external-input", "properties": {} },
+      { "id": "edge-input-links", "source": "input-links", "target": "stage-archive", "type": "input", "visualRole": "external-input", "properties": {} },
+      { "id": "edge-input-context", "source": "input-prior-context", "target": "stage-context", "type": "input", "visualRole": "external-input", "properties": {} },
+      { "id": "edge-compound", "source": "stage-workbench", "target": "stage-context", "type": "feedback", "label": "COMPOUND", "visualRole": "compounding-loop", "properties": {} }
+    ],
+    "groups": [
+      { "id": "phase-conversation", "type": "phase-zone", "label": "Conversation", "children": ["stage-line", "input-human-intent", "alt-chat-only"], "visualRole": "phase-zone", "properties": {} },
+      { "id": "phase-exploration", "type": "phase-zone", "label": "Exploration", "children": ["stage-branch", "stage-card", "input-agent-output"], "visualRole": "phase-zone", "properties": {} },
+      { "id": "phase-structure", "type": "phase-zone", "label": "Structure", "children": ["stage-field", "input-files", "alt-board-only"], "visualRole": "phase-zone", "properties": {} },
+      { "id": "phase-knowledge-workspace", "type": "phase-zone", "label": "Knowledge → Workspace", "children": ["stage-archive", "stage-context", "stage-workbench", "input-links", "input-prior-context", "alt-storage-only"], "visualRole": "phase-zone", "properties": {} }
+    ]
+  },
+  "composition": {
+    "unit": "mm",
+    "canvas": { "width": 594, "height": 210, "backgroundToken": "canvas.paper" },
+    "pages": [
+      { "id": "page-left", "label": "Left A4", "bounds": { "x": 0, "y": 0, "width": 297, "height": 210 } },
+      { "id": "page-right", "label": "Right A4", "bounds": { "x": 297, "y": 0, "width": 297, "height": 210 } }
+    ],
+    "safeAreas": [
+      { "id": "safe-outer", "kind": "margin", "bounds": { "x": 16, "y": 16, "width": 562, "height": 178 }, "policy": "advisory" },
+      { "id": "safe-gutter", "kind": "gutter", "bounds": { "x": 291, "y": 0, "width": 12, "height": 210 }, "policy": "avoid-critical-content" }
+    ],
+    "readingDirection": "lower-left-to-upper-right",
+    "defaultView": { "projection": "orthographic", "preset": "isometric", "azimuthDeg": 45, "elevationDeg": 35.264, "zoom": 1 }
+  },
+  "layout": {
+    "engine": { "id": "golden-case-authored", "version": "0.1.0", "seed": "flovvas-v1" },
+    "generated": {
+      "nodes": {
+        "stage-line": { "x": 70, "y": 165, "width": 52, "height": 26, "elevation": 4, "rotationYDeg": 0, "scale": 1, "zIndex": 10, "parameters": { "cardCount": 6 } },
+        "stage-branch": { "x": 145, "y": 140, "width": 62, "height": 34, "elevation": 8, "rotationYDeg": 0, "scale": 1, "zIndex": 20, "parameters": { "branchCount": 3 } },
+        "stage-card": { "x": 220, "y": 118, "width": 44, "height": 34, "elevation": 12, "rotationYDeg": 0, "scale": 1, "zIndex": 30, "parameters": { "detached": true } },
+        "stage-field": { "x": 280, "y": 98, "width": 78, "height": 48, "elevation": 8, "rotationYDeg": 0, "scale": 1, "zIndex": 40, "parameters": { "columns": 4, "rows": 3 } },
+        "stage-archive": { "x": 365, "y": 77, "width": 58, "height": 48, "elevation": 14, "rotationYDeg": 0, "scale": 1, "zIndex": 50, "parameters": { "levels": 4 } },
+        "stage-context": { "x": 445, "y": 55, "width": 64, "height": 50, "elevation": 18, "rotationYDeg": 0, "scale": 1, "zIndex": 60, "parameters": { "layers": 3 } },
+        "stage-workbench": { "x": 525, "y": 35, "width": 82, "height": 58, "elevation": 10, "rotationYDeg": 0, "scale": 1, "zIndex": 70, "parameters": { "modules": 5 } },
+        "alt-chat-only": { "x": 65, "y": 105, "width": 38, "height": 22, "elevation": 2, "rotationYDeg": 0, "scale": 0.8, "zIndex": 5, "parameters": {} },
+        "alt-board-only": { "x": 285, "y": 165, "width": 42, "height": 24, "elevation": 2, "rotationYDeg": 0, "scale": 0.8, "zIndex": 5, "parameters": {} },
+        "alt-storage-only": { "x": 390, "y": 145, "width": 42, "height": 24, "elevation": 2, "rotationYDeg": 0, "scale": 0.8, "zIndex": 5, "parameters": {} },
+        "input-human-intent": { "x": 24, "y": 184, "width": 24, "height": 16, "elevation": 0, "rotationYDeg": 0, "scale": 0.7, "zIndex": 1, "parameters": {} },
+        "input-agent-output": { "x": 170, "y": 188, "width": 24, "height": 16, "elevation": 0, "rotationYDeg": 0, "scale": 0.7, "zIndex": 1, "parameters": {} },
+        "input-files": { "x": 245, "y": 188, "width": 24, "height": 16, "elevation": 0, "rotationYDeg": 0, "scale": 0.7, "zIndex": 1, "parameters": {} },
+        "input-links": { "x": 342, "y": 178, "width": 24, "height": 16, "elevation": 0, "rotationYDeg": 0, "scale": 0.7, "zIndex": 1, "parameters": {} },
+        "input-prior-context": { "x": 450, "y": 150, "width": 24, "height": 16, "elevation": 0, "rotationYDeg": 0, "scale": 0.7, "zIndex": 1, "parameters": {} }
+      },
+      "routes": {
+        "edge-split": { "points": [{ "x": 96, "y": 152 }, { "x": 145, "y": 140 }] },
+        "edge-extract": { "points": [{ "x": 176, "y": 123 }, { "x": 220, "y": 118 }] },
+        "edge-connect": { "points": [{ "x": 242, "y": 105 }, { "x": 280, "y": 98 }] },
+        "edge-store": { "points": [{ "x": 319, "y": 82 }, { "x": 365, "y": 77 }] },
+        "edge-layer": { "points": [{ "x": 394, "y": 61 }, { "x": 445, "y": 55 }] },
+        "edge-recombine": { "points": [{ "x": 477, "y": 38 }, { "x": 525, "y": 35 }] },
+        "edge-alt-chat": { "points": [{ "x": 70, "y": 150 }, { "x": 65, "y": 105 }] },
+        "edge-alt-board": { "points": [{ "x": 285, "y": 120 }, { "x": 285, "y": 165 }] },
+        "edge-alt-storage": { "points": [{ "x": 365, "y": 100 }, { "x": 390, "y": 145 }] },
+        "edge-input-intent": { "points": [{ "x": 36, "y": 184 }, { "x": 70, "y": 165 }] },
+        "edge-input-agent": { "points": [{ "x": 182, "y": 188 }, { "x": 220, "y": 118 }] },
+        "edge-input-files": { "points": [{ "x": 257, "y": 188 }, { "x": 280, "y": 98 }] },
+        "edge-input-links": { "points": [{ "x": 354, "y": 178 }, { "x": 365, "y": 77 }] },
+        "edge-input-context": { "points": [{ "x": 462, "y": 150 }, { "x": 445, "y": 55 }] },
+        "edge-compound": { "points": [{ "x": 555, "y": 65 }, { "x": 565, "y": 110 }, { "x": 490, "y": 118 }, { "x": 445, "y": 80 }] }
+      },
+      "groups": {
+        "phase-conversation": { "bounds": { "x": 18, "y": 92, "width": 105, "height": 108 } },
+        "phase-exploration": { "bounds": { "x": 124, "y": 91, "width": 140, "height": 109 } },
+        "phase-structure": { "bounds": { "x": 268, "y": 76, "width": 78, "height": 124 } },
+        "phase-knowledge-workspace": { "bounds": { "x": 348, "y": 18, "width": 228, "height": 177 } }
+      }
+    },
+    "overrides": {
+      "nodes": {
+        "stage-workbench": { "x": 522, "rotationYDeg": -4 }
+      },
+      "routes": {},
+      "groups": {},
+      "view": {}
+    }
+  },
+  "annotations": [
+    { "id": "annotation-thesis", "text": "From conversation to a compounding workspace", "anchor": { "kind": "canvas", "position": { "x": 22, "y": 24 } }, "visualRole": "title", "properties": {} },
+    { "id": "annotation-field", "text": "Connections make relationships inspectable", "anchor": { "kind": "node", "targetId": "stage-field", "offset": { "x": 0, "y": -18 } }, "visualRole": "stage-note", "properties": {} },
+    { "id": "annotation-gutter", "text": "Keep the main transition legible across the spread", "anchor": { "kind": "edge", "targetId": "edge-connect", "offset": { "x": 8, "y": -8 } }, "visualRole": "editorial-note", "properties": {} },
+    { "id": "annotation-loop", "text": "Stored context improves the next cycle", "anchor": { "kind": "edge", "targetId": "edge-compound", "offset": { "x": 0, "y": -10 } }, "visualRole": "loop-note", "properties": {} }
+  ],
+  "presentation": {
+    "themeRef": "editorial-isometric-light",
+    "roleOverrides": {
+      "main-flow": { "colorToken": "ink.primary", "lineWeight": 1.5 },
+      "alternative": { "colorToken": "ink.muted", "lineStyle": "dashed" },
+      "external-input": { "colorToken": "accent.red" },
+      "compounding-loop": { "colorToken": "accent.red", "lineWeight": 1.25 }
+    }
+  },
+  "assets": [
+    { "id": "asset-card-slab", "kind": "primitive", "uri": "loom://builtin/primitive/card-slab", "mediaType": "application/vnd.loom.primitive+json", "license": "Loom built-in" },
+    { "id": "asset-input-plinth", "kind": "parametric-scene", "uri": "loom://builtin/template/input-plinth", "mediaType": "application/vnd.loom.template+json", "license": "Loom built-in" }
+  ]
+}

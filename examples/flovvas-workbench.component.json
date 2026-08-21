@@ -1,0 +1,46 @@
+{
+  "format": "loom.component-template",
+  "schemaVersion": "0.1.0",
+  "id": "flovvas-workbench",
+  "name": "Flovvas Workbench",
+  "kind": "parametric-scene",
+  "semanticDescription": "A recombinable working environment built from accumulated context and reusable thought units.",
+  "acceptedNodeTypes": ["product-stage", "workspace", "system-state"],
+  "searchTerms": ["workbench", "workspace", "recombine", "compounding", "工作台", "复利工作空间"],
+  "parametersSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "modules": { "type": "integer", "minimum": 3, "maximum": 9 },
+      "tiers": { "type": "integer", "minimum": 1, "maximum": 4 },
+      "openness": { "type": "number", "minimum": 0, "maximum": 1 }
+    }
+  },
+  "defaults": {
+    "modules": 5,
+    "tiers": 2,
+    "openness": 0.65
+  },
+  "capabilities": {
+    "transforms": ["move", "rotate-y", "scale-uniform", "elevate", "repeat", "stack", "compose"],
+    "supportsLabels": true,
+    "supportsThemeTokens": true,
+    "requires": ["orthographic-camera", "instancing"]
+  },
+  "dependencies": {
+    "primitiveRefs": ["generic-card-slab"],
+    "assetRefs": []
+  },
+  "rendererMappings": {
+    "reference-webgl": {
+      "implementationRef": "builtin://scenes/flovvas-workbench",
+      "requiredCapabilities": ["orthographic-camera", "instancing"],
+      "parameterMap": {}
+    }
+  },
+  "fallback": {
+    "componentRef": "generic-card-slab",
+    "parameterMap": { "labelMode": "title" }
+  }
+}

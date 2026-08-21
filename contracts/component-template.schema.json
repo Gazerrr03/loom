@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loom.local/schemas/component-template.schema.json",
+  "title": "Loom Component Template Manifest",
+  "description": "Semantic, parameter, capability, and renderer mapping contract for a reusable scene template.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schemaVersion",
+    "id",
+    "name",
+    "kind",
+    "semanticDescription",
+    "acceptedNodeTypes",
+    "searchTerms",
+    "parametersSchema",
+    "defaults",
+    "capabilities",
+    "rendererMappings",
+    "fallback"
+  ],
+  "properties": {
+    "format": { "const": "loom.component-template" },
+    "schemaVersion": { "const": "0.1.0" },
+    "id": { "$ref": "#/$defs/id" },
+    "name": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["parametric-scene", "asset", "fallback"] },
+    "semanticDescription": { "type": "string", "minLength": 1 },
+    "acceptedNodeTypes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "searchTerms": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "parametersSchema": {
+      "type": "object",
+      "description": "JSON Schema object describing the author-facing parameters."
+    },
+    "defaults": { "type": "object" },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transforms", "supportsLabels", "supportsThemeTokens"],
+      "properties": {
+        "transforms": {
+          "type": "array",
+          "items": {
+            "enum": ["move", "rotate-y", "scale-uniform", "elevate", "repeat", "stack", "branch", "distribute", "explode", "compose"]
+          },
+          "uniqueItems": true
+        },
+        "supportsLabels": { "type": "boolean" },
+        "supportsThemeTokens": { "type": "boolean" },
+        "requires": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primitiveRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "uniqueItems": true
+        },
+        "assetRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/id" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "rendererMappings": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/rendererMapping" }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["componentRef"],
+      "properties": {
+        "componentRef": { "$ref": "#/$defs/id" },
+        "parameterMap": { "type": "object" }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9._-]*$"
+    },
+    "rendererMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["implementationRef"],
+      "properties": {
+        "implementationRef": { "type": "string", "minLength": 1 },
+        "assetRef": { "$ref": "#/$defs/id" },
+        "requiredCapabilities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "parameterMap": { "type": "object" }
+      }
+    }
+  }
+}

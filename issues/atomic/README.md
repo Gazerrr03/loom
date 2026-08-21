@@ -25,4 +25,4 @@
 | M8 | 4 | 本地运行、创建旅程、往返旅程和关闭标准 |
 | **合计** | **45** | |
 
-完整字段和依赖关系见 `atomic-issue-manifest.txt`。
+完整字段和依赖关系见 `atomic-issue-manifest.txt`；实际 GitHub 编号见 `issue-map.md`。

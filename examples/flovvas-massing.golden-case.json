@@ -7,6 +7,7 @@
   "artifactRevision": "sha256:c51043c2a0d508fed6e52e13d0b80336b702e6ffc42eccb282f7ba048605d923",
   "artifactPath": "examples/flovvas-massing.diagram.json",
   "semanticSourcePath": "flovvas-massing-flowchart-case.md",
+  "acceptancePath": "examples/flovvas-massing.acceptance.json",
   "coverage": {
     "primaryStages": [
       "stage-line",

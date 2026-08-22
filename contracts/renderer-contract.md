@@ -220,6 +220,8 @@ type RendererError = {
     | 'unsupported-capability'
     | 'unsupported-template'
     | 'missing-asset'
+    | 'invalid-tool-input'
+    | 'revision-conflict'
     | 'invalid-layout'
     | 'render-failed'
     | 'export-failed'
@@ -235,7 +237,50 @@ type RendererError = {
 
 所有 Core、Tool 和 Renderer 错误使用相同的 `code`、`objectIds`、`fieldPath`、`recoverable` 和 `suggestedAction` 字段。对用户显示短句；诊断详情可以保留对象 ID、Adapter、revision 和经过清理的 cause。`message`、`fieldPath`、`suggestedAction` 和 `cause` 不得泄露凭证、无关本地路径或第三方授权信息，也不得把任何错误写进 Artifact。
 
-## 10. iCraft Adapter 的进入条件
+## 10. MCP Tool Envelope
+
+Codex 通过 MCP 调用的是 Diagram 意图，不是 Renderer 私有 API。所有 Tool 共用
+`contracts/mcp-tools.schema.json` 的 v0.1 envelope：
+
+```json
+{
+  "format": "loom.mcp.tool-call",
+  "schemaVersion": "0.1.0",
+  "toolName": "diagram.save",
+  "requestId": "req-001",
+  "input": {},
+  "expectedRevision": "sha256:before",
+  "dryRun": false
+}
+```
+
+Tool result 必须返回相同的 `toolName` / `requestId`、`status`、可选的结果对象、
+当前 `revision`、共享 `RendererError` 结构和副作用声明：
+
+```json
+{
+  "format": "loom.mcp.tool-result",
+  "schemaVersion": "0.1.0",
+  "toolName": "diagram.save",
+  "requestId": "req-001",
+  "status": "ok",
+  "result": {},
+  "error": null,
+  "revision": "sha256:after",
+  "effects": {
+    "kind": "write",
+    "paths": ["diagrams/example.diagram.json"],
+    "changed": true,
+    "reversible": true
+  }
+}
+```
+
+`effects.paths` 只允许安全的相对逻辑路径；Tool result 不得携带 mesh、scene、
+GPU、camera、material 或其他 Renderer runtime 对象。`dryRun` 可以返回预计的
+write effect，但不得谎报已经发生了文件变更。
+
+## 11. iCraft Adapter 的进入条件
 
 iCraft 只有同时满足以下条件才进入 MVP 交付路径：
 
@@ -246,7 +291,7 @@ iCraft 只有同时满足以下条件才进入 MVP 交付路径：
 
 在条件被证实前，参考 Renderer 是默认主路径，iCraft 是并行 spike。
 
-## 11. 契约验收
+## 12. 契约验收
 
 - 用 Golden Case fixture 加载并导出完整跨页 PNG。
 - 替换 Adapter 时无需迁移 `diagram.json`。

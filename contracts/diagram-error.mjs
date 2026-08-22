@@ -18,6 +18,8 @@ const ERROR_CODES = new Set([
   "unsupported-capability",
   "unsupported-template",
   "invalid-layout",
+  "invalid-tool-input",
+  "revision-conflict",
   "render-failed",
   "export-failed",
 ]);

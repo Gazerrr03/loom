@@ -320,7 +320,7 @@ Semantic Type
 
 | ID | 需求 | 状态 | MVP 验收意图 | 依赖 |
 |---|---|---|---|---|
-| MVP-E01 | 定义 `mcp-tools.schema.json` v0.1 | 已确认 | Tool 名称、输入、输出、错误和文件副作用均有契约 | B、C、D |
+| MVP-E01 | 定义 `mcp-tools.schema.json` v0.1 | 已确认 | 每个 Tool 使用统一 versioned call/result envelope；输入、输出、错误、revision 与文件副作用均可独立校验，且不暴露 Renderer 私有对象 | B、C、D |
 | MVP-E02 | 支持 Diagram 生命周期工具 | 已确认 | `create / load / save` 可在真实 Codex 会话中工作 | E01、B07 |
 | MVP-E03 | 支持 Node 原子操作 | 已确认 | `create / update / delete` 均校验 ID 与 Type | E01、B03 |
 | MVP-E04 | 支持 Edge 原子操作 | 已确认 | `connect / disconnect` 不产生悬空引用 | E01、B04 |

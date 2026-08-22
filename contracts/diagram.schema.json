@@ -230,7 +230,7 @@
           }
         },
         "generated": { "$ref": "#/$defs/layoutLayer", "description": "Deterministic layout output for nodes, routes, and groups; it may be regenerated without replacing Human Override." },
-        "overrides": { "$ref": "#/$defs/overrideLayer" }
+        "overrides": { "$ref": "#/$defs/overrideLayer", "description": "Field-level Human Override. Reflow retains entries for surviving Generated Layout targets and drops stale entries for deleted objects." }
       }
     },
     "layoutLayer": {

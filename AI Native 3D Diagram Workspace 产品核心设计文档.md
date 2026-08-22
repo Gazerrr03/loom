@@ -263,6 +263,8 @@ Golden Case 中：
 - Annotation position；
 - Zone bounds。
 
+语义新增或重排时，Layout Engine 可以替换 Generated Layout；它不直接改写 Human Override。只有仍然存在的对象保留对应的字段级覆盖，已删除对象的孤立覆盖会被清理。
+
 ### 5.5 Human Override
 
 用户在 Workspace UI 中修改：
@@ -282,6 +284,13 @@ Generated Layout
 + Human Override
 = Effective Layout
 ```
+
+局部重排的判断规则：
+
+- 新增 Node、Edge 或 Group 只获得新的 Generated Layout 条目，不移动无关对象已有的手工字段；
+- 已有对象的自动位置可以变化，但显式覆盖的字段继续优先；未覆盖字段继续采用新的 Generated 值；
+- 删除语义对象时清掉它对应的 Override，避免未来复用同一 ID 时继承过期走位；
+- 清除某个 Override 后，该字段立即回到当前 Generated Layout，且清除操作可撤销。
 
 ### 5.6 Asset References
 

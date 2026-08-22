@@ -272,6 +272,7 @@
       }
     },
     "nodeLayout": {
+      "description": "Node placement in canonical Diagram coordinates; x/y use composition.unit and elevation is a separate depth value.",
       "type": "object",
       "additionalProperties": false,
       "required": ["x", "y", "width", "height"],
@@ -303,6 +304,7 @@
       }
     },
     "point": {
+      "description": "Diagram-space point in composition.unit; it is not a screen pixel coordinate.",
       "type": "object",
       "additionalProperties": false,
       "required": ["x", "y"],

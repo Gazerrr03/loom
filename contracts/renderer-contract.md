@@ -60,6 +60,23 @@ type RenderDocument = {
 
 `effectiveLayout` 由 Core 按字段合并 Generated Layout 与 Human Override。Renderer 不应自行读取两层并猜测优先级。
 
+### Coordinate layers
+
+The Artifact is the source of truth for coordinates. MVP uses four explicit
+layers:
+
+| Layer | Meaning | Unit / ownership |
+| --- | --- | --- |
+| Diagram | Canonical canvas, node, route and annotation positions | `composition.unit`; persisted in `diagram.json` |
+| Page | Diagram position relative to one page bounds | Same unit; derived, never persisted as a second truth |
+| View | Camera-centred coordinates after zoom/orientation | Renderer input; derived from Diagram + `defaultView`/override |
+| Screen | Pointer and pixel coordinates in the browser/export viewport | CSS/device pixels; never written into Artifact |
+
+The canonical Diagram origin is the spread's top-left corner (x increases to
+the right, y increases downward); `elevation` remains a separate depth value.
+Pointer conversion must round-trip through these layers without changing the
+stored unit or writing screen pixels into Human Override.
+
 ## 3. 能力协商
 
 每个 Adapter 在加载 Diagram 前返回 `RendererCapabilities`：

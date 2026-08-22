@@ -159,6 +159,10 @@ type MoveNodeCommand = {
 
 一次完整手势只产生一个可撤销命令。Renderer 产生的逐帧坐标不能逐条写进 undo 历史。
 
+`contracts/interaction-commit.mjs` 固化了这条边界：`beginPreview` 创建只读会话，`updatePreview` 只返回新的内存帧，`cancelPreview` 丢弃帧；只有 `commitPreview` 在 pointer-up 时产生一个带 `gestureId` 与 `baseRevision` 的 Domain Command。Core 通过 `applyDomainCommand` 将命令映射为一次字段级 Human Override 更新，保留该对象已有的其他 Override 字段。
+
+MVP 支持的最小命令集合为 `layout.node.move`、`layout.node.rotate-y`、`layout.node.scale`、`layout.node.z-index`、`layout.route.replace-points` 和 `layout.view.change`。命令包含 `targetId` 与最终值，不包含屏幕坐标、Renderer 私有对象或逐帧历史；提交后的新 Artifact 才能重新生成 RenderDocument。
+
 ## 6. Scene Node 与 Component Template
 
 Renderer 接收的是：

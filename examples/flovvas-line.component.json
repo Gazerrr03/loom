@@ -1,0 +1,16 @@
+{
+  "format": "loom.component-template",
+  "schemaVersion": "0.1.0",
+  "id": "flovvas-line",
+  "name": "Flovvas Line",
+  "kind": "parametric-scene",
+  "semanticDescription": "A narrow linear conversation stream that exposes the one-direction constraint.",
+  "acceptedNodeTypes": ["product-stage", "conversation", "system-state"],
+  "searchTerms": ["line", "conversation", "stream", "linear", "对话", "线性"],
+  "parametersSchema": { "type": "object", "additionalProperties": false, "properties": { "cardCount": { "type": "integer", "minimum": 3, "maximum": 9 }, "density": { "type": "number", "minimum": 0, "maximum": 1 } } },
+  "defaults": { "cardCount": 6, "density": 0.8 },
+  "capabilities": { "transforms": ["move", "rotate-y", "scale-uniform", "stack"], "supportsLabels": true, "supportsThemeTokens": true, "requires": ["orthographic-camera"] },
+  "dependencies": { "primitiveRefs": ["generic-card-slab"], "assetRefs": [] },
+  "rendererMappings": { "reference-webgl": { "implementationRef": "builtin://scenes/flovvas-line", "requiredCapabilities": ["orthographic-camera"], "parameterMap": {} } },
+  "fallback": { "componentRef": "generic-card-slab", "parameterMap": { "labelMode": "title" } }
+}

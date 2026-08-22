@@ -1,0 +1,16 @@
+{
+  "format": "loom.component-template",
+  "schemaVersion": "0.1.0",
+  "id": "flovvas-card",
+  "name": "Flovvas Card",
+  "kind": "parametric-scene",
+  "semanticDescription": "A detached operable thought unit extracted from a chronological stream.",
+  "acceptedNodeTypes": ["product-stage", "thought-unit", "system-state"],
+  "searchTerms": ["card", "thought", "unit", "detached", "卡片", "想法"],
+  "parametersSchema": { "type": "object", "additionalProperties": false, "properties": { "detached": { "type": "boolean" }, "sourceSlots": { "type": "integer", "minimum": 1, "maximum": 6 } } },
+  "defaults": { "detached": true, "sourceSlots": 1 },
+  "capabilities": { "transforms": ["move", "rotate-y", "scale-uniform", "elevate", "explode"], "supportsLabels": true, "supportsThemeTokens": true, "requires": ["orthographic-camera"] },
+  "dependencies": { "primitiveRefs": ["generic-card-slab"], "assetRefs": [] },
+  "rendererMappings": { "reference-webgl": { "implementationRef": "builtin://scenes/flovvas-card", "requiredCapabilities": ["orthographic-camera"], "parameterMap": {} } },
+  "fallback": { "componentRef": "generic-card-slab", "parameterMap": { "labelMode": "title" } }
+}

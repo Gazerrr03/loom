@@ -47,6 +47,23 @@ State
 
 The result should remain understandable even when most explanatory copy is removed.
 
+### Golden Template family
+
+The seven primary stages use one `generic-card-slab` primitive family. Their
+identities, parameter defaults, and renderer fallbacks are registered in
+`examples/flovvas-template-registry.json`; each stage keeps its own profile so
+adjacent states remain visually distinguishable without changing semantic node IDs.
+
+| Stage | Component ID | Distinguishing default profile | Fallback |
+| --- | --- | --- | --- |
+| LINE | `flovvas-line` | `cardCount=6`, `density=0.8` | `generic-card-slab` |
+| BRANCH | `flovvas-branch` | `branchCount=3`, `spread=0.7` | `generic-card-slab` |
+| CARD | `flovvas-card` | `detached=true`, `sourceSlots=1` | `generic-card-slab` |
+| FIELD | `flovvas-field` | `columns=4`, `rows=3` | `generic-card-slab` |
+| ARCHIVE | `flovvas-archive` | `levels=4`, `persistence=0.85` | `generic-card-slab` |
+| CONTEXT | `flovvas-context` | `layers=3`, `retrievalSlots=6` | `generic-card-slab` |
+| WORKBENCH | `flovvas-workbench` | `modules=5`, `tiers=2` | `generic-card-slab` |
+
 ## 2. Product background
 
 Flovvas began when its creator was using ChatGPT to learn Python as a complete beginner.

@@ -220,6 +220,8 @@ type RendererError = {
     | 'unsupported-capability'
     | 'unsupported-template'
     | 'missing-asset'
+    | 'invalid-tool-input'
+    | 'revision-conflict'
     | 'invalid-layout'
     | 'render-failed'
     | 'export-failed'

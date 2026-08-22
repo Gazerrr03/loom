@@ -1,0 +1,29 @@
+{
+  "format": "loom.golden-case.acceptance",
+  "schemaVersion": "0.1.0",
+  "caseId": "flovvas-massing",
+  "caseVersion": "0.1.0",
+  "artifactId": "flovvas-massing-golden-case",
+  "artifactRevision": "sha256:c51043c2a0d508fed6e52e13d0b80336b702e6ffc42eccb282f7ba048605d923",
+  "checks": {
+    "structure": {
+      "status": "pass",
+      "evidence": "Golden Case identity and semantic coverage tests pass."
+    },
+    "layout": {
+      "status": "pass",
+      "evidence": "Fixture declares the 594 x 210 mm spread, page bounds and gutter safe area."
+    },
+    "render": {
+      "status": "pending",
+      "evidence": null
+    },
+    "export": {
+      "status": "pending",
+      "evidence": null
+    }
+  },
+  "authorConclusion": "continue-refinement",
+  "authorNote": "Gate 0 fixes identity, coverage and evidence shape; visual render and PNG export await later Gates.",
+  "recordedAt": "2026-08-22T00:00:00+08:00"
+}

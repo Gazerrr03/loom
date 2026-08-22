@@ -13,11 +13,17 @@
 - **Artifact manifest:** `examples/flovvas-massing.golden-case.json`
 - **Artifact ID:** `flovvas-massing-golden-case`
 - **Artifact revision:** recorded as the fixture SHA-256 in the manifest
+- **Acceptance record:** `examples/flovvas-massing.acceptance.json`
 
 The manifest also contains the canonical coverage list for the seven primary
 stages, six primary transformations, four phase zones, three alternatives,
 five external inputs and one compounding loop. Coverage checks must resolve
 objects by their stable IDs rather than by fixture position or filename.
+
+The acceptance record keeps structure, layout, render and export evidence
+separate, and records the author conclusion against the same Artifact
+revision. Visual judgement is intentionally lightweight: it is not a pixel-
+level similarity gate.
 
 ## 1. Case objective
 

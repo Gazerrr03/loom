@@ -95,6 +95,13 @@ MVP 的端到端验收脚本固定为：
 
 停止条件：如果 Golden Case 无法用当前语义模型描述，不进入渲染开发，先修改契约。
 
+Gate 0 的 Golden Case 证据记录使用
+`examples/flovvas-massing.acceptance.json`。记录必须关联同一个 Artifact
+revision，并分别保存 `structure`、`layout`、`render`、`export` 四类证据，
+以及 `authorConclusion`（`accept`、`continue-refinement` 或
+`change-strategy`）。视觉判断用于记录方向，不设置像素级相似度或自动
+视觉回归阻塞。
+
 ### Gate 1：视觉纵切与 Renderer 决策
 
 目标：用真实 Golden Case 证明 3D 表达成立，并决定首个可交付 Renderer。

@@ -81,6 +81,7 @@ type RendererCapabilities = {
   >
   exports: Array<'png'>
   assetFormats: Array<'gltf' | 'glb' | 'image'>
+  features: string[]
   maxTextureSize?: number
 }
 ```
@@ -148,6 +149,10 @@ Component Template Manifest 只描述语义、参数与 Renderer Mapping；具�
 1. 使用 Template 声明的 fallback。
 2. 使用产品级 `generic-card-slab` fallback。
 3. 如果语义会被误导，则拒绝渲染该 Diagram 并给出错误，而不是画一个无提示的空盒子。
+
+Mapping 解析结果必须保留原节点的 semantic type 与 label；切换 Adapter 只改变
+`implementationRef` 或 fallback 结果，不改变 `node.type`、`node.id` 或
+`componentRef` 的语义身份。
 
 ## 7. 路线与标注层
 

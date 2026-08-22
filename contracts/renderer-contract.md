@@ -64,6 +64,10 @@ type RenderDocument = {
 
 RenderDocument 不携带 `layout.generated`、`layout.overrides` 或任何 Renderer 私有运行时对象。Core 以当前 Artifact 的 revision 创建一份独立的只读投影；Adapter 对投影的修改不得反向改变 `diagram.json`。
 
+Renderer 从 `semantic.nodes` 与 `effectiveLayout.nodes` 产生稳定的 `SceneNode` 描述。每个 SceneNode 至少暴露 `nodeId`、`sourceComponentRef`、`componentRef`、`bounds`、`elevation`、`rotationYDeg`、`scale`、`zIndex` 和已解析参数；它不包含 mesh、材质、相机或其他运行时对象。缺失的 identity-only generic template 只能进入明确标记的 neutral fallback，不能静默生成空节点。
+
+Route、Phase Zone 和 Annotation overlay 与 SceneNode 共享 Diagram coordinate space，并携带同一 RenderDocument 的视图；Renderer 必须对这些层使用同一 pan/zoom/orbit 变换。overlay 默认进入 PNG，编辑手柄、选择框和其他 editor chrome 默认排除。
+
 ### Coordinate layers
 
 The Artifact is the source of truth for coordinates. MVP uses four explicit

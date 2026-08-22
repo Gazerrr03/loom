@@ -55,7 +55,6 @@ export function evaluateLayoutConstraints(artifact, profile) {
     else if (!bounds || !rectContains({ x: 0, y: 0, ...artifact.composition.canvas }, bounds)) violations.push({ kind: "phase-zone-outside-canvas", objectIds: [groupId], fieldPath: `layout.groups.${groupId}.bounds` });
   }
 
-  const edgeById = new Map(artifact.semantic.edges.map((edge) => [edge.id, edge]));
   for (const edge of artifact.semantic.edges) {
     const route = effective.routes[edge.id];
     if (!route || !Array.isArray(route.points) || route.points.length < 2) {

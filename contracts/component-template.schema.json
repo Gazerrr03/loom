@@ -42,9 +42,12 @@
     },
     "parametersSchema": {
       "type": "object",
-      "description": "JSON Schema object describing the author-facing parameters."
+      "description": "JSON Schema object describing the author-facing parameters; defaults and instances are validated against it."
     },
-    "defaults": { "type": "object" },
+    "defaults": {
+      "type": "object",
+      "description": "Values used when a component instance omits a parameter."
+    },
     "capabilities": {
       "type": "object",
       "additionalProperties": false,

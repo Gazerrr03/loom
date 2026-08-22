@@ -63,6 +63,7 @@
         "supportsLabels": { "type": "boolean" },
         "supportsThemeTokens": { "type": "boolean" },
         "requires": {
+          "description": "Adapter feature identifiers required before this template can be mapped.",
           "type": "array",
           "items": { "type": "string" },
           "uniqueItems": true
@@ -113,6 +114,7 @@
         "implementationRef": { "type": "string", "minLength": 1 },
         "assetRef": { "$ref": "#/$defs/id" },
         "requiredCapabilities": {
+          "description": "Additional Adapter feature identifiers required by this mapping.",
           "type": "array",
           "items": { "type": "string" },
           "uniqueItems": true

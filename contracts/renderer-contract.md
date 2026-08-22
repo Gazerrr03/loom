@@ -180,6 +180,9 @@ MVP 允许路线与标注使用 2.5D overlay，而不是强制成为真实三维
 - 它们必须跟随 Scene Node 和视图变化。
 - PNG 导出必须包含完整 overlay。
 - route point 使用 Artifact composition 坐标，而不是屏幕像素。
+- route control point 以语义 edge 的 Diagram-space 点集保存；编辑一个点只替换该 route 的点集，不把当前 viewport 或屏幕像素写进 Artifact。
+- node/group annotation 以目标 bounds 的中心加持久化 Diagram-space offset 定位；edge annotation 以 route 的弧长中点加 offset 定位；节点或路线变化后重新解析 anchor，不保存一次性的屏幕坐标。
+- canvas annotation 直接保存 Diagram-space position。所有 anchor 在导出前都从 Effective Layout 重新解析，因此平移、缩放或换 Adapter 不会让标注悬空。
 - 标注碰撞可以由 Renderer 提示，但自动修正必须回到 Layout 层提交。
 
 这项取舍优先保证分析图可读性，也使未来 Renderer 更容易替换。

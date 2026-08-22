@@ -320,6 +320,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["points"],
+      "description": "A route control-point sequence in canonical Diagram coordinates. The sequence follows the semantic edge after node movement.",
       "properties": {
         "points": {
           "type": "array",
@@ -332,6 +333,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["points"],
+      "description": "A Human Override route point set in canonical Diagram coordinates; a submitted gesture replaces the route atomically.",
       "properties": {
         "points": {
           "type": "array",
@@ -381,7 +383,7 @@
               "properties": {
                 "kind": { "enum": ["node", "edge", "group"] },
                 "targetId": { "$ref": "#/$defs/id" },
-                "offset": { "$ref": "#/$defs/point" }
+                "offset": { "$ref": "#/$defs/point", "description": "A persisted Diagram-space offset from the target anchor; it may be negative and is not a screen offset." }
               }
             },
             {

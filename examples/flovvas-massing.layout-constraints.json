@@ -1,0 +1,10 @@
+{
+  "format": "loom.layout-constraints",
+  "schemaVersion": "0.1.0",
+  "gutterSafeAreaId": "safe-gutter",
+  "protectedNodeRoles": ["main-stage"],
+  "primaryEdgeRoles": ["main-flow"],
+  "secondaryEdgeRoles": ["alternative", "external-input", "compounding-loop"],
+  "requiredPhaseZoneIds": ["phase-conversation", "phase-exploration", "phase-structure", "phase-knowledge-workspace"],
+  "readingDirection": "lower-left-to-upper-right"
+}

@@ -1,0 +1,10 @@
+{
+  "format": "loom.golden-case",
+  "schemaVersion": "0.1.0",
+  "caseId": "flovvas-massing",
+  "caseVersion": "0.1.0",
+  "artifactId": "flovvas-massing-golden-case",
+  "artifactRevision": "sha256:c51043c2a0d508fed6e52e13d0b80336b702e6ffc42eccb282f7ba048605d923",
+  "artifactPath": "examples/flovvas-massing.diagram.json",
+  "semanticSourcePath": "flovvas-massing-flowchart-case.md"
+}

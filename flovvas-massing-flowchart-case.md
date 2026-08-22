@@ -6,6 +6,14 @@
 > **Working title:** *Massing a Container for Thought*
 > **Chinese title:** 为思考推敲一个容器
 
+## Golden Case identity
+
+- **Case ID:** `flovvas-massing`
+- **Case version:** `0.1.0`
+- **Artifact manifest:** `examples/flovvas-massing.golden-case.json`
+- **Artifact ID:** `flovvas-massing-golden-case`
+- **Artifact revision:** recorded as the fixture SHA-256 in the manifest
+
 ## 1. Case objective
 
 Create one continuous process diagram that explains how Flovvas evolved from a response to linear AI chat into a reusable context workspace.

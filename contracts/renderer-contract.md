@@ -23,6 +23,14 @@ Renderer 把已经解析好的 Diagram 表达为可见、可选择、可预览�
 - 静默改变或删除不支持的语义对象。
 - 替 Workspace 管理 undo/redo。
 
+### Formal asset boundary
+
+The persisted `diagram.json` contains semantic objects, composition, annotations,
+presentation tokens, and source asset references (`id`, `kind`, `uri`, and
+`license`). It never contains renderer-private scene graphs, GPU handles, mesh
+instances, materials, caches, or other runtime objects. Adapters may construct
+those values after loading and must discard them when the render session ends.
+
 ## 2. 输入：RenderDocument
 
 Core 将 `diagram.json` 解析成只读的 `RenderDocument` 后交给 Adapter。它至少包含：

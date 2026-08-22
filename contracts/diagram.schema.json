@@ -396,6 +396,7 @@
       }
     },
     "presentation": {
+      "description": "Persisted theme and role tokens only; renderer scene, GPU, mesh, and cache objects are out of bounds.",
       "type": "object",
       "additionalProperties": false,
       "required": ["themeRef", "roleOverrides"],
@@ -408,16 +409,17 @@
       }
     },
     "asset": {
+      "description": "A portable source reference with explicit license metadata; runtime-loaded assets are not embedded here.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "kind", "uri"],
+      "required": ["id", "kind", "uri", "license"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "kind": { "enum": ["primitive", "parametric-scene", "gltf-model", "image", "font"] },
         "uri": { "type": "string", "minLength": 1 },
         "mediaType": { "type": "string" },
         "checksum": { "type": "string" },
-        "license": { "type": "string" }
+        "license": { "type": "string", "minLength": 1 }
       }
     }
   }

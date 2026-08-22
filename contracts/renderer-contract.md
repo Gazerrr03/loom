@@ -188,6 +188,10 @@ type PngExportOptions = {
 ```ts
 type RendererError = {
   code:
+    | 'invalid-envelope'
+    | 'unsupported-version'
+    | 'duplicate-id'
+    | 'dangling-reference'
     | 'unsupported-capability'
     | 'unsupported-template'
     | 'missing-asset'
@@ -196,13 +200,15 @@ type RendererError = {
     | 'export-failed'
   message: string
   objectIds: string[]
+  fieldPath: string | null
   recoverable: boolean
+  suggestedAction: string | null
   suggestedFallback?: string
-  cause?: string
+  cause?: string | null
 }
 ```
 
-对用户显示短句；诊断详情保留对象 ID、Adapter、revision 和 cause。不得把凭证、私有文件路径或第三方授权信息写进 Artifact。
+所有 Core、Tool 和 Renderer 错误使用相同的 `code`、`objectIds`、`fieldPath`、`recoverable` 和 `suggestedAction` 字段。对用户显示短句；诊断详情可以保留对象 ID、Adapter、revision 和经过清理的 cause。`message`、`fieldPath`、`suggestedAction` 和 `cause` 不得泄露凭证、无关本地路径或第三方授权信息，也不得把任何错误写进 Artifact。
 
 ## 10. iCraft Adapter 的进入条件
 

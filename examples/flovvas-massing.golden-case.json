@@ -6,5 +6,45 @@
   "artifactId": "flovvas-massing-golden-case",
   "artifactRevision": "sha256:c51043c2a0d508fed6e52e13d0b80336b702e6ffc42eccb282f7ba048605d923",
   "artifactPath": "examples/flovvas-massing.diagram.json",
-  "semanticSourcePath": "flovvas-massing-flowchart-case.md"
+  "semanticSourcePath": "flovvas-massing-flowchart-case.md",
+  "coverage": {
+    "primaryStages": [
+      "stage-line",
+      "stage-branch",
+      "stage-card",
+      "stage-field",
+      "stage-archive",
+      "stage-context",
+      "stage-workbench"
+    ],
+    "primaryTransformations": [
+      "edge-split",
+      "edge-extract",
+      "edge-connect",
+      "edge-store",
+      "edge-layer",
+      "edge-recombine"
+    ],
+    "phaseZones": [
+      "phase-conversation",
+      "phase-exploration",
+      "phase-structure",
+      "phase-knowledge-workspace"
+    ],
+    "alternatives": [
+      "alt-chat-only",
+      "alt-board-only",
+      "alt-storage-only"
+    ],
+    "externalInputs": [
+      "input-human-intent",
+      "input-agent-output",
+      "input-files",
+      "input-links",
+      "input-prior-context"
+    ],
+    "compoundingLoops": [
+      "edge-compound"
+    ]
+  }
 }

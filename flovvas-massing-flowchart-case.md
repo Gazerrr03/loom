@@ -14,6 +14,11 @@
 - **Artifact ID:** `flovvas-massing-golden-case`
 - **Artifact revision:** recorded as the fixture SHA-256 in the manifest
 
+The manifest also contains the canonical coverage list for the seven primary
+stages, six primary transformations, four phase zones, three alternatives,
+five external inputs and one compounding loop. Coverage checks must resolve
+objects by their stable IDs rather than by fixture position or filename.
+
 ## 1. Case objective
 
 Create one continuous process diagram that explains how Flovvas evolved from a response to linear AI chat into a reusable context workspace.

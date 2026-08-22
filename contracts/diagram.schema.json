@@ -95,8 +95,14 @@
       "required": ["id", "source", "target", "type"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
-        "source": { "$ref": "#/$defs/id" },
-        "target": { "$ref": "#/$defs/id" },
+        "source": {
+          "description": "Stable ID of a semantic node; cross-object resolution is checked by the graph contract.",
+          "$ref": "#/$defs/id"
+        },
+        "target": {
+          "description": "Stable ID of a semantic node; cross-object resolution is checked by the graph contract.",
+          "$ref": "#/$defs/id"
+        },
         "type": { "type": "string", "minLength": 1 },
         "label": { "type": "string" },
         "visualRole": { "type": "string" },
@@ -112,6 +118,7 @@
         "type": { "type": "string", "minLength": 1 },
         "label": { "type": "string" },
         "children": {
+          "description": "Stable IDs of semantic nodes contained by this group.",
           "type": "array",
           "items": { "$ref": "#/$defs/id" },
           "uniqueItems": true

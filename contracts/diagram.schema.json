@@ -410,6 +410,7 @@
     },
     "asset": {
       "description": "A portable source reference with explicit license metadata; runtime-loaded assets are not embedded here.",
+      "$comment": "uri may be loom://, a redistributable remote URI, or a local absolute/relative GLB/GLTF path; binary bytes are never embedded.",
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "kind", "uri", "license"],

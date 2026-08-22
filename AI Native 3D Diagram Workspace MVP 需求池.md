@@ -300,7 +300,7 @@ Semantic Type
 | MVP-C08 | 使用 Embedding / 向量数据库做语义搜索 | MVP 后 | 小型内置库先使用可解释的文本匹配，除非验证证明不够用 | C03 |
 | MVP-C09 | 为 Component Definition 提供可合法使用的 3D Asset | 已确认 | Asset 来源采用合法内置原语、小型可再分发模型、用户导入 GLB / GLTF 和基础几何 Fallback；记录来源与许可 | DEC-10、C01、F01 |
 | MVP-C10 | 支持 Parametric Scene Template | 已确认 | 一个 State 可由同一 `card-slab` 的数量、位置、旋转、堆叠和层级参数生成，不要求每个 State 对应独立模型 | A08、C01、F01 |
-| MVP-C11 | 支持用户导入 GLB / GLTF | 已确认 | 导入资产有稳定引用、预览、基本尺寸归一化和缺失文件错误；不会把大型二进制直接内嵌进 JSON | DEC-10、C01、F05 |
+| MVP-C11 | 支持用户导入 GLB / GLTF | 已确认 | 导入资产有稳定引用、预览、基本尺寸归一化和缺失文件错误；MVP 可保存本地绝对路径与授权信息，但不会把大型二进制直接内嵌进 JSON；缺失资产阻止 PNG 导出 | DEC-10、C01、F05 |
 
 ### Epic D：Layout
 

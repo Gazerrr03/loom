@@ -75,4 +75,8 @@ test("requirements and capability lists reject malformed or duplicate entries", 
     () => negotiateRendererCapabilities(goldenRequirements, referenceCapabilities({ features: "instancing" })),
     /capabilities\.features must be an array/,
   );
+  assert.throws(
+    () => negotiateRendererCapabilities(goldenRequirements, referenceCapabilities({ features: ["instancing", "instancing"] })),
+    /capabilities\.features contains duplicate capability/,
+  );
 });

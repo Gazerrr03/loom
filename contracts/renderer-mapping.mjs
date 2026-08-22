@@ -8,6 +8,18 @@ function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function assertStringArray(value, path) {
+  if (!Array.isArray(value)) throw new Error(`${path} must be an array`);
+  const seen = new Set();
+  for (const [index, item] of value.entries()) {
+    if (typeof item !== "string" || item.length === 0) {
+      throw new Error(`${path}[${index}] must be a non-empty string`);
+    }
+    if (seen.has(item)) throw new Error(`${path} contains duplicate capability: ${item}`);
+    seen.add(item);
+  }
+}
+
 function assertCapabilities(capabilities) {
   if (!isRecord(capabilities)) throw new TypeError("renderer capabilities must be an object");
   for (const field of ["adapterId", "adapterVersion"]) {
@@ -16,7 +28,7 @@ function assertCapabilities(capabilities) {
     }
   }
   for (const field of ["projections", "componentKinds", "interactions", "exports", "assetFormats", "features"]) {
-    if (!Array.isArray(capabilities[field])) throw new Error(`capabilities.${field} must be an array`);
+    assertStringArray(capabilities[field], `capabilities.${field}`);
   }
   if (capabilities.projections.some((projection) => !PROJECTIONS.has(projection))) {
     throw new Error("capabilities.projections contains an unsupported projection");

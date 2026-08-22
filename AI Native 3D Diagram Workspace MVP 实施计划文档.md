@@ -139,6 +139,8 @@ Renderer 决策：
 工作范围：
 
 - 创建、校验、加载和原子保存 `diagram.json`。
+- 文件生命周期采用 load → validate → serialize → 同目录临时文件写入并同步 → rename；写入失败不替换上一份合法文件。
+- 保存返回由序列化字节计算的 `sha256` revision 与 `updatedAt`；load-save-reload 必须保留 semantic、composition、layout、annotations、presentation 和 asset 引用。
 - 按对象 ID 提供稳定的增删改操作。
 - 将 Generated Layout 与 Human Override 合并为 Effective Layout。
 - Generated Layout 与 Human Override 采用字段级合并：覆盖 `x` 不冻结 `y`、`scale` 或其他未覆盖字段；参数对象按 key 合并，路线点集作为一个字段替换。

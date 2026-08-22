@@ -117,6 +117,8 @@ Core 在 render 前比较 Diagram 需求与 Adapter 能力：
 - 可使用明确 fallback：记录降级，再继续加载。
 - 不允许“看起来加载成功但悄悄丢掉对象”。
 
+能力比较在 `load` 之前完成，结果分为 `ready`、`fallback` 和 `error`。`fallback` 只能来自调用方显式声明的 capability fallback，并必须产生 warning；未声明的缺口返回 `unsupported-capability`，错误消息包含 `adapterId`，并保留受影响对象 ID 与恢复建议。
+
 ## 4. 最小 Adapter 接口
 
 ```ts

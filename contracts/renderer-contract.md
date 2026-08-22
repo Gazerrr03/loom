@@ -305,6 +305,29 @@ iCraft 只有同时满足以下条件才进入 MVP 交付路径：
 
 在条件被证实前，参考 Renderer 是默认主路径，iCraft 是并行 spike。
 
+### M4-07 证据记录（2026-08-22）
+
+官方材料核对结果如下：
+
+| 边界 | 公开材料能证明什么 | 结论 |
+|---|---|---|
+| create | Mermaid 可在 iCraft Editor 内转换为 3D 场景；Player API 没有公开 create scene / create element / create edge 方法 | `no-go`：不能从 Loom Diagram 自动生成 `.iplayer` |
+| update | Player 可读元素、控制视图/动画、设置可见/禁用态；没有公开通用几何、参数或保存更新 API | `no-go`：不能把 iCraft 当作 Core 的写入入口 |
+| reopen | Player 构造参数接收 `.iplayer`，并提供 `openFileByUrl` | `partial`：能打开既有场景，但不补齐 create/update |
+| export | Player API 提供 `exportImage()` | `partial`：已有场景可以尝试导出，尺寸/背景/跨页语义仍需实际验证 |
+| authorization | 官方 LICENSE 是专有 Commercial License，限制修改、衍生、逆向、再分发和竞争产品使用；公开页面对个人/商业方案仍需供应方确认 | `unknown → no-go for public distribution` |
+
+官方来源：
+
+- Mermaid 3D：https://icraft.gantcloud.com/blog/mermaid
+- Player API：https://icraft.gantcloud.com/player-javascript/api
+- Player 介绍：https://icraft.gantcloud.com/player-javascript/intro
+- Player React README：https://github.com/gantFDT/icraft/blob/main/player-react.README.zh-CN.md
+- LICENSE：https://github.com/gantFDT/icraft/blob/main/LICENSE
+- 定价与企业集成：https://icraft.gantcloud.com/pricing
+
+因此，MVP 当前的 Renderer 决策是：Reference Renderer 保持默认主路径；iCraft 只保留为受控的展示/导出候选，不能阻塞 Core、Workspace 或正式 JSON 资产。只有在获得书面授权并出现可重复的 create/update/save 证据后，Adapter 才能从 `partial/no-go` 重新评估为 `go`。
+
 ## 12. 契约验收
 
 - 用 Golden Case fixture 加载并导出完整跨页 PNG。

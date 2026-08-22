@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://loom.local/schemas/diagram.schema.json",
   "title": "Loom Diagram Artifact",
-  "description": "Canonical renderer-independent asset for an AI-native 3D diagram. The file envelope is strict: unsupported format or schemaVersion values must be rejected.",
+  "description": "Canonical renderer-independent asset for an AI-native 3D diagram. The file envelope is strict: unsupported format or schemaVersion values must be rejected. Validation failures use the shared error contract and are never persisted into the artifact.",
   "$comment": "schemaVersion is intentionally a const. A reader must not silently downgrade an unknown future version.",
   "type": "object",
   "additionalProperties": false,

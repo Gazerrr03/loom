@@ -128,6 +128,7 @@
       }
     },
     "composition": {
+      "description": "Shared physical and viewing coordinate contract for layout, rendering, and export.",
       "type": "object",
       "additionalProperties": false,
       "required": ["unit", "canvas", "pages", "safeAreas", "readingDirection", "defaultView"],
@@ -150,6 +151,7 @@
       }
     },
     "canvas": {
+      "description": "The positive coordinate space expressed in composition.unit.",
       "type": "object",
       "additionalProperties": false,
       "required": ["width", "height"],
@@ -181,6 +183,7 @@
       }
     },
     "safeArea": {
+      "description": "A bounded advisory or protected region. A gutter is centred on a page boundary.",
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "kind", "bounds"],

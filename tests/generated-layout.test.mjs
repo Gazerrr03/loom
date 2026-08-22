@@ -37,12 +37,12 @@ test("primary routes follow the lower-left to upper-right reading direction", as
 test("constraint conflicts are returned as a report without mutating the artifact or overrides", async () => {
   const artifact = await readJson("examples/flovvas-massing.diagram.json");
   const constraints = await readJson("examples/flovvas-massing.layout-constraints.json");
+  artifact.layout.overrides.nodes["stage-line"] = { x: 268 };
   const before = structuredClone(artifact);
-  const conflictProfile = { ...constraints, gutterSafeAreaId: "safe-outer" };
-  const { layout, constraintReport } = generateLayout(artifact, { seed: "golden-layout-v1", constraints: conflictProfile });
+  const { layout, constraintReport } = generateLayout(artifact, { seed: "golden-layout-v1", constraints });
   assert.equal(constraintReport.valid, false);
   assert.ok(constraintReport.violations.some((violation) => violation.kind === "critical-gutter"));
   assert.deepEqual(artifact, before);
-  assert.equal(artifact.layout.overrides.nodes["stage-line"], undefined);
+  assert.deepEqual(artifact.layout.overrides.nodes["stage-line"], { x: 268 });
   assert.equal(layout.generated.nodes["stage-line"].x >= 0, true);
 });

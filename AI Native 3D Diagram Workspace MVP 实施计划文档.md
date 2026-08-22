@@ -143,6 +143,7 @@ Renderer 决策：
 - 保存返回由序列化字节计算的 `sha256` revision 与 `updatedAt`；load-save-reload 必须保留 semantic、composition、layout、annotations、presentation 和 asset 引用。
 - 按对象 ID 提供稳定的增删改操作。
 - 将 Generated Layout 与 Human Override 合并为 Effective Layout。
+- Generated Layout 由稳定的 engine/version/seed 标识；给定同一 semantic graph、构图约束和 seed，输出完整的 nodes/routes/groups。冲突只返回约束报告，不覆盖 Human Override。
 - Generated Layout 与 Human Override 采用字段级合并：覆盖 `x` 不冻结 `y`、`scale` 或其他未覆盖字段；参数对象按 key 合并，路线点集作为一个字段替换。
 - Human Override 支持清除单字段、单对象或整层；清除操作不修改原始 artifact，便于 Workspace 生成一次可撤销命令。
 - 查询 Component Definition，并解析 Renderer Mapping。

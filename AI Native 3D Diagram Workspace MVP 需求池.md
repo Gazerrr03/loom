@@ -83,19 +83,36 @@ MVP 已经确认：
 
 ## 3. 当前外部能力事实与风险
 
-### 3.1 已验证事实
+### 3.1 已验证事实（M4-07，检索日期：2026-08-22）
 
-- iCraft Editor 当前支持在网页编辑器中把 Mermaid `architecture`、`flowchart`、`stateDiagram` 转成 3D 场景；转换和渲染在浏览器本地完成。
-- `@icraft/player-react` 和 `@icraft/player` 的公开用法都是加载由 iCraft Editor 导出的 `.iplayer` 文件。
-- 公开 Player API 可以读取元素、播放动画、切换视图和加载文件，但公开文档未提供创建元素、创建连线或保存 `.iplayer` 场景的 API。
-- iCraft GitHub 仓库虽然公开可见，但 LICENSE 是商业专有许可证，并限制修改、衍生、逆向、再分发及用于创建竞争产品。
+本节只记录公开官方材料直接能证明的边界，不把“网页编辑器可以做到”推断成“Player API 可以程序化做到”。
 
-参考：
+- iCraft 的官方 Mermaid 入口支持 `architecture-beta`、`flowchart-v2` 和 `stateDiagram`，并描述了 3D 元素、分层分组、曲线路由和模型匹配；这证明了编辑器侧的视觉表达能力，但没有证明外部程序可以提交一份 Loom Diagram 并自动生成场景。
+- `@icraft/player` / `@icraft/player-react` 的官方安装与示例都以 iCraft Editor 导出的 `.iplayer` 为输入。Player API 暴露 `openFileByUrl`、元素读取、视图/相机控制和 `exportImage`。
+- 截至本次检索，公开 Player API 没有列出创建元素、创建连线、修改几何/参数或保存 `.iplayer` 的方法；`Element3D` 的公开方法只有可见性和禁用态等有限控制。因此不能把公开 Player 当作 Loom 的自动写入 Adapter。
+- 官方 GitHub 的 LICENSE 标为 Commercial License：只能通过官方 npm 安装，禁止修改、衍生、逆向、再分发、转授权以及用于创建竞争产品。Loom 的公开仓库不能默认把 iCraft runtime、模型库或 `.iplayer` 资产当作可再分发依赖。
+- 授权价格信息存在需要确认的差异：Player 介绍页曾写“个人免费、商用授权 299 美元/年”，当前定价页则列出免费/专业/企业定制与源码授权；这不足以证明 Loom 的公开发布、嵌入和商用边界已经获准。
 
-- iCraft Mermaid 3D：https://icraft.gantcloud.com/blog/mermaid
-- iCraft Player API：https://icraft.gantcloud.com/player-javascript/api
+官方来源（均在 2026-08-22 复核）：
+
+- Mermaid 3D：https://icraft.gantcloud.com/blog/mermaid
+- Player API：https://icraft.gantcloud.com/player-javascript/api
+- Player 介绍与授权提示：https://icraft.gantcloud.com/player-javascript/intro
 - Player React README：https://github.com/gantFDT/icraft/blob/main/player-react.README.zh-CN.md
-- iCraft LICENSE：https://github.com/gantFDT/icraft/blob/main/LICENSE
+- 官方 LICENSE：https://github.com/gantFDT/icraft/blob/main/LICENSE
+- 当前定价与企业集成说明：https://icraft.gantcloud.com/pricing
+
+### 3.1.1 M4-07 边界矩阵
+
+| 检查边界 | 官方证据 | 本轮结论 | 对 Loom MVP 的含义 |
+|---|---|---|---|
+| create：从 Diagram 自动创建场景 | Mermaid 可在 iCraft Editor 中导入/转换；Player API 没有 create scene / create element / create edge | `no-go`（公开 API） | 不把“自动生成 `.iplayer`”写成已承诺能力；除非获得官方接口或授权示例 |
+| update：按 Loom 语义更新节点、路线和参数 | Player API 有读取、播放、可见性/禁用态和相机方法，未公开通用几何/语义更新或保存方法 | `no-go`（公开 API） | Core 继续只写 `diagram.json`；iCraft 不得成为唯一写入入口 |
+| reopen：重新打开已有场景 | 构造 Player 时接收 `.iplayer`，并提供 `openFileByUrl` | `partial / 可用` | 可作为“展示已有 iCraft 场景”的候选能力，但不解决 Loom 到场景的创建链 |
+| export：从 Player 导出图片 | API 明确提供 `exportImage(): Promise<void>` | `partial / 已证实` | 可作为 iCraft 展示后的图片导出能力；导出尺寸、背景和跨页语义仍需真实试验 |
+| authorization：本地个人试验、公开仓库、商用分发 | 官方 LICENSE 为专有商业许可；官方页面对价格/商业授权描述需向供应方确认 | `unknown → no-go for public distribution` | 在书面授权前，Reference Renderer 是默认路径；不将 iCraft 包、模型和 `.iplayer` 提交到公开发布物 |
+
+**聚合结论：`partial` 仅适用于“加载已有 `.iplayer` 并展示/尝试导出”；“从 Loom Diagram 自动创建、更新并保存 iCraft 场景”的 Adapter 当前为 `no-go`。** 这不是永久否定 iCraft，而是把未证实能力挡在 MVP 主路径之外。
 
 ### 3.2 对 MVP 的影响
 
@@ -108,7 +125,7 @@ Diagram Artifact
   → @icraft/player-react 展示
 ```
 
-在获得官方许可或公开的程序化场景生成接口之前，不能把“实现 iCraft Adapter”当成普通、确定的开发 Issue。它必须先经过可行性与授权 Gate。
+在获得官方许可或公开的程序化场景生成接口之前，不能把“实现 iCraft Adapter”当成普通、确定的开发 Issue。它必须先经过可行性与授权 Gate；本轮 M4-07 的 `no-go` 只针对自动写入 Adapter，不阻止未来把 iCraft 作为受控的展示/导出 Provider。
 
 可选产品路径：
 

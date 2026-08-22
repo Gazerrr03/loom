@@ -60,6 +60,10 @@ type RenderDocument = {
 
 `effectiveLayout` 由 Core 按字段合并 Generated Layout 与 Human Override。Renderer 不应自行读取两层并猜测优先级。
 
+`RenderDocument` 的顶层字段固定为 `artifactId`、`revision`、`semantic`、`composition`、`effectiveLayout`、`annotations`、`presentation`、`components` 和 `assets`。`components` 与 `assets` 是 Core 已解析的对象 map，分别以 `componentRef` 和资产 ID 为 key；Renderer 不负责查找或拼接它们。
+
+RenderDocument 不携带 `layout.generated`、`layout.overrides` 或任何 Renderer 私有运行时对象。Core 以当前 Artifact 的 revision 创建一份独立的只读投影；Adapter 对投影的修改不得反向改变 `diagram.json`。
+
 ### Coordinate layers
 
 The Artifact is the source of truth for coordinates. MVP uses four explicit

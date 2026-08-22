@@ -64,6 +64,14 @@ adjacent states remain visually distinguishable without changing semantic node I
 | CONTEXT | `flovvas-context` | `layers=3`, `retrievalSlots=6` | `generic-card-slab` |
 | WORKBENCH | `flovvas-workbench` | `modules=5`, `tiers=2` | `generic-card-slab` |
 
+### Layout constraint profile
+
+`examples/flovvas-massing.layout-constraints.json` is the executable profile
+for this spread. It protects the central `safe-gutter` from critical node
+anchors, requires the four phase zones, and checks main-flow routes separately
+from alternatives, external inputs, and the compounding loop. A conflict is a
+reported layout result, not a reason to delete the semantic node or edge.
+
 ## 2. Product background
 
 Flovvas began when its creator was using ChatGPT to learn Python as a complete beginner.

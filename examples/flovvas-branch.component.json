@@ -1,0 +1,16 @@
+{
+  "format": "loom.component-template",
+  "schemaVersion": "0.1.0",
+  "id": "flovvas-branch",
+  "name": "Flovvas Branch",
+  "kind": "parametric-scene",
+  "semanticDescription": "A branching family that keeps one origin while holding parallel exploration.",
+  "acceptedNodeTypes": ["product-stage", "exploration", "system-state"],
+  "searchTerms": ["branch", "exploration", "parallel", "split", "分支", "探索"],
+  "parametersSchema": { "type": "object", "additionalProperties": false, "properties": { "branchCount": { "type": "integer", "minimum": 2, "maximum": 6 }, "spread": { "type": "number", "minimum": 0, "maximum": 1 }, "originRetention": { "type": "number", "minimum": 0, "maximum": 1 } } },
+  "defaults": { "branchCount": 3, "spread": 0.7, "originRetention": 0.9 },
+  "capabilities": { "transforms": ["move", "rotate-y", "scale-uniform", "branch", "distribute"], "supportsLabels": true, "supportsThemeTokens": true, "requires": ["orthographic-camera"] },
+  "dependencies": { "primitiveRefs": ["generic-card-slab"], "assetRefs": [] },
+  "rendererMappings": { "reference-webgl": { "implementationRef": "builtin://scenes/flovvas-branch", "requiredCapabilities": ["orthographic-camera"], "parameterMap": {} } },
+  "fallback": { "componentRef": "generic-card-slab", "parameterMap": { "labelMode": "title" } }
+}

@@ -1,0 +1,16 @@
+{
+  "format": "loom.component-template",
+  "schemaVersion": "0.1.0",
+  "id": "flovvas-field",
+  "name": "Flovvas Field",
+  "kind": "parametric-scene",
+  "semanticDescription": "A connected field that makes relationships between thought units inspectable.",
+  "acceptedNodeTypes": ["product-stage", "relationship-field", "system-state"],
+  "searchTerms": ["field", "relationship", "connect", "network", "关系", "连接"],
+  "parametersSchema": { "type": "object", "additionalProperties": false, "properties": { "columns": { "type": "integer", "minimum": 2, "maximum": 6 }, "rows": { "type": "integer", "minimum": 2, "maximum": 6 }, "connectionDensity": { "type": "number", "minimum": 0, "maximum": 1 } } },
+  "defaults": { "columns": 4, "rows": 3, "connectionDensity": 0.65 },
+  "capabilities": { "transforms": ["move", "rotate-y", "scale-uniform", "distribute", "compose"], "supportsLabels": true, "supportsThemeTokens": true, "requires": ["orthographic-camera", "instancing"] },
+  "dependencies": { "primitiveRefs": ["generic-card-slab"], "assetRefs": [] },
+  "rendererMappings": { "reference-webgl": { "implementationRef": "builtin://scenes/flovvas-field", "requiredCapabilities": ["orthographic-camera", "instancing"], "parameterMap": {} } },
+  "fallback": { "componentRef": "generic-card-slab", "parameterMap": { "labelMode": "title" } }
+}

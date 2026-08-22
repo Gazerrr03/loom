@@ -1,0 +1,14 @@
+{
+  "format": "loom.component-registry",
+  "schemaVersion": "0.1.0",
+  "goldenTemplateIds": ["flovvas-line", "flovvas-branch", "flovvas-card", "flovvas-field", "flovvas-archive", "flovvas-context", "flovvas-workbench"],
+  "templates": [
+    { "id": "flovvas-line", "path": "examples/flovvas-line.component.json" },
+    { "id": "flovvas-branch", "path": "examples/flovvas-branch.component.json" },
+    { "id": "flovvas-card", "path": "examples/flovvas-card.component.json" },
+    { "id": "flovvas-field", "path": "examples/flovvas-field.component.json" },
+    { "id": "flovvas-archive", "path": "examples/flovvas-archive.component.json" },
+    { "id": "flovvas-context", "path": "examples/flovvas-context.component.json" },
+    { "id": "flovvas-workbench", "path": "examples/flovvas-workbench.component.json" }
+  ]
+}

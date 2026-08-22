@@ -1,0 +1,16 @@
+{
+  "format": "loom.component-template",
+  "schemaVersion": "0.1.0",
+  "id": "flovvas-archive",
+  "name": "Flovvas Archive",
+  "kind": "parametric-scene",
+  "semanticDescription": "A layered archive where selected thought units persist as knowledge.",
+  "acceptedNodeTypes": ["product-stage", "knowledge-store", "system-state"],
+  "searchTerms": ["archive", "knowledge", "store", "persist", "归档", "知识"],
+  "parametersSchema": { "type": "object", "additionalProperties": false, "properties": { "levels": { "type": "integer", "minimum": 2, "maximum": 6 }, "persistence": { "type": "number", "minimum": 0, "maximum": 1 }, "shelfSpacing": { "type": "number", "minimum": 0.1, "maximum": 2 } } },
+  "defaults": { "levels": 4, "persistence": 0.85, "shelfSpacing": 0.6 },
+  "capabilities": { "transforms": ["move", "rotate-y", "scale-uniform", "elevate", "stack"], "supportsLabels": true, "supportsThemeTokens": true, "requires": ["orthographic-camera", "instancing"] },
+  "dependencies": { "primitiveRefs": ["generic-card-slab"], "assetRefs": [] },
+  "rendererMappings": { "reference-webgl": { "implementationRef": "builtin://scenes/flovvas-archive", "requiredCapabilities": ["orthographic-camera", "instancing"], "parameterMap": {} } },
+  "fallback": { "componentRef": "generic-card-slab", "parameterMap": { "labelMode": "title" } }
+}

@@ -1,0 +1,16 @@
+{
+  "format": "loom.component-template",
+  "schemaVersion": "0.1.0",
+  "id": "flovvas-context",
+  "name": "Flovvas Context",
+  "kind": "parametric-scene",
+  "semanticDescription": "Layered working context that makes stored knowledge reusable in the next task.",
+  "acceptedNodeTypes": ["product-stage", "working-context", "system-state"],
+  "searchTerms": ["context", "reuse", "layer", "working", "上下文", "复用"],
+  "parametersSchema": { "type": "object", "additionalProperties": false, "properties": { "layers": { "type": "integer", "minimum": 2, "maximum": 6 }, "retrievalSlots": { "type": "integer", "minimum": 1, "maximum": 12 }, "openness": { "type": "number", "minimum": 0, "maximum": 1 } } },
+  "defaults": { "layers": 3, "retrievalSlots": 6, "openness": 0.7 },
+  "capabilities": { "transforms": ["move", "rotate-y", "scale-uniform", "elevate", "stack", "compose"], "supportsLabels": true, "supportsThemeTokens": true, "requires": ["orthographic-camera", "instancing"] },
+  "dependencies": { "primitiveRefs": ["generic-card-slab"], "assetRefs": [] },
+  "rendererMappings": { "reference-webgl": { "implementationRef": "builtin://scenes/flovvas-context", "requiredCapabilities": ["orthographic-camera", "instancing"], "parameterMap": {} } },
+  "fallback": { "componentRef": "generic-card-slab", "parameterMap": { "labelMode": "title" } }
+}

@@ -75,6 +75,28 @@ test("error validation rejects unsupported codes, malformed paths, and leaked lo
     }),
     /local path/,
   );
+  assert.throws(
+    () => createDiagramError({
+      code: "missing-asset",
+      message: "Asset unavailable",
+      recoverable: true,
+      suggestedFallback: "/tmp/generic-card-slab.glb",
+    }),
+    /local path/,
+  );
+  assert.throws(
+    () => assertDiagramError({
+      code: "invalid-layout",
+      message: "Bad layout",
+      objectIds: [],
+      fieldPath: null,
+      recoverable: true,
+      suggestedAction: null,
+      cause: null,
+      internalDebug: "should not cross the contract",
+    }),
+    /Unsupported error field/,
+  );
 });
 
 test("recoverable errors may omit an object or suggestion without losing the envelope", () => {

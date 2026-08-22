@@ -21,6 +21,16 @@ const ERROR_CODES = new Set([
   "render-failed",
   "export-failed",
 ]);
+const ERROR_FIELDS = new Set([
+  "code",
+  "message",
+  "objectIds",
+  "fieldPath",
+  "recoverable",
+  "suggestedAction",
+  "suggestedFallback",
+  "cause",
+]);
 
 function assertSafeText(value, path, { allowNull = false } = {}) {
   if (allowNull && value === null) return;
@@ -44,6 +54,9 @@ export function assertDiagramError(error) {
   if (error === null || typeof error !== "object" || Array.isArray(error)) {
     throw new TypeError("error must be an object");
   }
+  for (const key of Object.keys(error)) {
+    if (!ERROR_FIELDS.has(key)) throw new Error(`Unsupported error field: ${key}`);
+  }
   if (!ERROR_CODES.has(error.code)) throw new Error(`Unsupported error code: ${String(error.code)}`);
   assertSafeText(error.message, "error.message");
   assertObjectIds(error.objectIds);
@@ -52,6 +65,9 @@ export function assertDiagramError(error) {
   }
   if (typeof error.recoverable !== "boolean") throw new Error("error.recoverable must be boolean");
   assertSafeText(error.suggestedAction, "error.suggestedAction", { allowNull: true });
+  if (error.suggestedFallback !== undefined) {
+    assertSafeText(error.suggestedFallback, "error.suggestedFallback");
+  }
   if (error.cause !== undefined) assertSafeText(error.cause, "error.cause", { allowNull: true });
   return error;
 }

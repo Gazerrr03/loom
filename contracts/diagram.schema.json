@@ -207,6 +207,7 @@
       }
     },
     "layout": {
+      "description": "Generated layout is replaceable; overrides are field-level Human Override data.",
       "type": "object",
       "additionalProperties": false,
       "required": ["engine", "generated", "overrides"],
@@ -250,6 +251,7 @@
       }
     },
     "overrideLayer": {
+      "description": "Only fields present here are frozen by Human Override; omitted fields continue to follow Generated Layout.",
       "type": "object",
       "additionalProperties": false,
       "required": ["nodes", "routes", "groups", "view"],

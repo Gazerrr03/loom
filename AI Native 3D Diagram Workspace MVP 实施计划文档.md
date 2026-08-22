@@ -141,6 +141,8 @@ Renderer 决策：
 - 创建、校验、加载和原子保存 `diagram.json`。
 - 按对象 ID 提供稳定的增删改操作。
 - 将 Generated Layout 与 Human Override 合并为 Effective Layout。
+- Generated Layout 与 Human Override 采用字段级合并：覆盖 `x` 不冻结 `y`、`scale` 或其他未覆盖字段；参数对象按 key 合并，路线点集作为一个字段替换。
+- Human Override 支持清除单字段、单对象或整层；清除操作不修改原始 artifact，便于 Workspace 生成一次可撤销命令。
 - 查询 Component Definition，并解析 Renderer Mapping。
 - 支持内置参数化组件、小型可再分发模型、用户 GLB/GLTF 与几何 fallback。
 - 对缺失组件、缺失资产和不支持能力返回结构化错误。

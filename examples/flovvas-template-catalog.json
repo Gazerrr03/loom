@@ -1,0 +1,78 @@
+{
+  "format": "loom.component-catalog",
+  "schemaVersion": "0.1.0",
+  "goldenTemplateIds": [
+    "flovvas-line",
+    "flovvas-branch",
+    "flovvas-card",
+    "flovvas-field",
+    "flovvas-archive",
+    "flovvas-context",
+    "flovvas-workbench"
+  ],
+  "templates": [
+    {
+      "id": "flovvas-line",
+      "name": "LINE",
+      "semanticDescription": "An ephemeral linear conversation stream before ideas separate.",
+      "acceptedNodeTypes": ["product-stage", "conversation", "system-state"],
+      "searchTerms": ["line", "conversation", "stream", "linear", "对话", "线性"]
+    },
+    {
+      "id": "flovvas-branch",
+      "name": "BRANCH",
+      "semanticDescription": "Parallel exploration splitting from one conversation line.",
+      "acceptedNodeTypes": ["product-stage", "exploration", "system-state"],
+      "searchTerms": ["branch", "exploration", "parallel", "split", "分支", "探索"]
+    },
+    {
+      "id": "flovvas-card",
+      "name": "CARD",
+      "semanticDescription": "A detached thought unit that can become operable.",
+      "acceptedNodeTypes": ["product-stage", "thought-unit", "system-state"],
+      "searchTerms": ["card", "thought", "unit", "detached", "卡片", "想法"]
+    },
+    {
+      "id": "flovvas-field",
+      "name": "FIELD",
+      "semanticDescription": "A connected field where relationships between thought units become visible.",
+      "acceptedNodeTypes": ["product-stage", "relationship-field", "system-state"],
+      "searchTerms": ["field", "relationship", "connect", "network", "关系", "连接"]
+    },
+    {
+      "id": "flovvas-archive",
+      "name": "ARCHIVE",
+      "semanticDescription": "Selected thought units persist as layered knowledge.",
+      "acceptedNodeTypes": ["product-stage", "knowledge-store", "system-state"],
+      "searchTerms": ["archive", "knowledge", "store", "persist", "归档", "知识"]
+    },
+    {
+      "id": "flovvas-context",
+      "name": "CONTEXT",
+      "semanticDescription": "Stored knowledge becomes reusable working context.",
+      "acceptedNodeTypes": ["product-stage", "working-context", "system-state"],
+      "searchTerms": ["context", "reuse", "layer", "working", "上下文", "复用"]
+    },
+    {
+      "id": "flovvas-workbench",
+      "name": "WORKBENCH",
+      "semanticDescription": "A recombinable workspace where accumulated context compounds.",
+      "acceptedNodeTypes": ["product-stage", "workspace", "system-state"],
+      "searchTerms": ["workbench", "workspace", "recombine", "compounding", "工作台", "复利工作空间"]
+    },
+    {
+      "id": "generic-card-slab",
+      "name": "Generic Card Slab",
+      "semanticDescription": "A neutral fallback slab that preserves a node label.",
+      "acceptedNodeTypes": ["alternative-path", "fallback"],
+      "searchTerms": ["fallback", "card", "neutral", "通用形体"]
+    },
+    {
+      "id": "generic-input-plinth",
+      "name": "Generic Input Plinth",
+      "semanticDescription": "A neutral plinth for external inputs entering the diagram.",
+      "acceptedNodeTypes": ["external-input", "input", "fallback"],
+      "searchTerms": ["input", "external", "source", "输入", "外部来源"]
+    }
+  ]
+}

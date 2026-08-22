@@ -216,10 +216,12 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["id", "version"],
+          "description": "The deterministic Generated Layout producer identity. Human Override remains a separate layer.",
           "properties": {
             "id": { "type": "string" },
             "version": { "type": "string" },
             "seed": {
+              "description": "Stable input seed recorded with Generated Layout so the same semantic graph and constraints can be reproduced.",
               "anyOf": [
                 { "type": "string" },
                 { "type": "number" }
@@ -227,7 +229,7 @@
             }
           }
         },
-        "generated": { "$ref": "#/$defs/layoutLayer" },
+        "generated": { "$ref": "#/$defs/layoutLayer", "description": "Deterministic layout output for nodes, routes, and groups; it may be regenerated without replacing Human Override." },
         "overrides": { "$ref": "#/$defs/overrideLayer" }
       }
     },

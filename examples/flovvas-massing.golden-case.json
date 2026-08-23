@@ -4,7 +4,7 @@
   "caseId": "flovvas-massing",
   "caseVersion": "0.1.0",
   "artifactId": "flovvas-massing-golden-case",
-  "artifactRevision": "sha256:c51043c2a0d508fed6e52e13d0b80336b702e6ffc42eccb282f7ba048605d923",
+  "artifactRevision": "sha256:e208422b39d7f1491a7304108a2dcf0d233c733366add85ae927cf8a39e09486",
   "artifactPath": "examples/flovvas-massing.diagram.json",
   "semanticSourcePath": "flovvas-massing-flowchart-case.md",
   "acceptancePath": "examples/flovvas-massing.acceptance.json",

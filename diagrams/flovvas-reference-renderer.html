@@ -58,7 +58,7 @@
       <div>
         <p class="eyebrow">M4 · Reference Renderer · Golden Case</p>
         <h1>From conversation to a compounding workspace</h1>
-        <p class="intro">这是 Loom 的第一个可评审视觉纵切：同一份 <code>diagram.json</code> 被投影为七个可辨认的等轴阶段、路线层和标注层。它验证“有限参数化原语能否承载语义”，不把 Renderer 私有状态写回正式资产。</p>
+        <p class="intro">这是 Loom 的第一个可评审视觉纵切：同一份 <code>diagram.json</code> 被投影为七个有自身构造逻辑的等轴阶段、方格路线层和标注层。它验证“有限参数化原语能否承载语义”，不把 Renderer 私有状态写回正式资产。</p>
       </div>
       <div class="actions" aria-label="预览操作">
         <button id="reset-view" type="button">重置视图</button>
@@ -74,7 +74,7 @@
       <div class="stage">
         <svg id="reference-scene" viewBox="0 0 1100 700" role="img" aria-labelledby="scene-title scene-description">
           <title id="scene-title">Flovvas Golden Case 等轴流程图</title>
-          <desc id="scene-description">七个产品阶段沿左下到右上方向排列，路线、阶段区和标注共同组成一张作品集分析图。</desc>
+          <desc id="scene-description">七个产品阶段沿左下到右上方向排列，模型由不同构造原语组成，路线沿等轴方格边延伸，阶段区和标注共同组成一张作品集分析图。</desc>
           <defs>
             <marker id="arrow-main" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0 0 L9 3.5 L0 7 Z" fill="#4f718b"/></marker>
             <marker id="arrow-alt" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0 0 L9 3.5 L0 7 Z" fill="#9b9a95"/></marker>
@@ -94,8 +94,8 @@
         </div>
       </div>
       <div class="notes">
-        <article class="note"><strong>七个阶段仍可区分</strong><p>LINE、BRANCH、CARD、FIELD、ARCHIVE、CONTEXT、WORKBENCH 使用不同的参数化体量和颜色，只把标签作为辅助。</p></article>
-        <article class="note"><strong>构图先服从语义</strong><p>主路径由左下向右上阅读；中缝被绘制为保护带，关键节点中心不落入其中。</p></article>
+        <article class="note"><strong>七个阶段仍可区分</strong><p>LINE、BRANCH、CARD、FIELD、ARCHIVE、CONTEXT、WORKBENCH 分别使用薄片、分支、卡片、网格、层架、叠层和开放工作台原语，颜色只作辅助。</p></article>
+        <article class="note"><strong>路径服从方格</strong><p>底图显示等轴方格；路线只能沿两个网格方向折行，主路径仍由左下向右上阅读。</p></article>
         <article class="note"><strong>Renderer 不拥有事实</strong><p>页面可以重新加载 JSON；节点、路线和标注都是 RenderDocument 的派生投影，编辑态控件不进入正式画面。</p></article>
       </div>
     </section>
@@ -125,7 +125,7 @@
             "alt-chat-only": { x: 65, y: 105, width: 38, height: 22, elevation: 2, scale: .8, zIndex: 5 }, "alt-board-only": { x: 285, y: 165, width: 42, height: 24, elevation: 2, scale: .8, zIndex: 5 }, "alt-storage-only": { x: 390, y: 145, width: 42, height: 24, elevation: 2, scale: .8, zIndex: 5 }, "input-human-intent": { x: 24, y: 184, width: 24, height: 16, elevation: 0, scale: .7, zIndex: 1 }, "input-agent-output": { x: 170, y: 188, width: 24, height: 16, elevation: 0, scale: .7, zIndex: 1 }, "input-files": { x: 245, y: 188, width: 24, height: 16, elevation: 0, scale: .7, zIndex: 1 }, "input-links": { x: 342, y: 178, width: 24, height: 16, elevation: 0, scale: .7, zIndex: 1 }, "input-prior-context": { x: 450, y: 150, width: 24, height: 16, elevation: 0, scale: .7, zIndex: 1 }
           },
           routes: {
-            "edge-split": { points: [{ x: 96, y: 152 }, { x: 145, y: 140 }] }, "edge-extract": { points: [{ x: 176, y: 123 }, { x: 220, y: 118 }] }, "edge-connect": { points: [{ x: 242, y: 105 }, { x: 280, y: 98 }] }, "edge-store": { points: [{ x: 319, y: 82 }, { x: 365, y: 77 }] }, "edge-layer": { points: [{ x: 394, y: 61 }, { x: 445, y: 55 }] }, "edge-recombine": { points: [{ x: 477, y: 38 }, { x: 525, y: 35 }] }, "edge-alt-chat": { points: [{ x: 70, y: 150 }, { x: 65, y: 105 }] }, "edge-alt-board": { points: [{ x: 285, y: 120 }, { x: 285, y: 165 }] }, "edge-alt-storage": { points: [{ x: 365, y: 100 }, { x: 390, y: 145 }] }, "edge-input-intent": { points: [{ x: 36, y: 184 }, { x: 70, y: 165 }] }, "edge-input-agent": { points: [{ x: 182, y: 188 }, { x: 220, y: 118 }] }, "edge-input-files": { points: [{ x: 257, y: 188 }, { x: 280, y: 98 }] }, "edge-input-links": { points: [{ x: 354, y: 178 }, { x: 365, y: 77 }] }, "edge-input-context": { points: [{ x: 462, y: 150 }, { x: 445, y: 55 }] }, "edge-compound": { points: [{ x: 555, y: 65 }, { x: 565, y: 110 }, { x: 490, y: 118 }, { x: 445, y: 80 }] }
+            "edge-split": { points: [{ x: 96, y: 152 }, { x: 120, y: 152 }, { x: 120, y: 140 }, { x: 145, y: 140 }] }, "edge-extract": { points: [{ x: 176, y: 123 }, { x: 198, y: 123 }, { x: 198, y: 118 }, { x: 220, y: 118 }] }, "edge-connect": { points: [{ x: 242, y: 105 }, { x: 260, y: 105 }, { x: 260, y: 98 }, { x: 280, y: 98 }] }, "edge-store": { points: [{ x: 319, y: 82 }, { x: 342, y: 82 }, { x: 342, y: 77 }, { x: 365, y: 77 }] }, "edge-layer": { points: [{ x: 394, y: 61 }, { x: 420, y: 61 }, { x: 420, y: 55 }, { x: 445, y: 55 }] }, "edge-recombine": { points: [{ x: 477, y: 38 }, { x: 500, y: 38 }, { x: 500, y: 35 }, { x: 525, y: 35 }] }, "edge-alt-chat": { points: [{ x: 70, y: 150 }, { x: 70, y: 130 }, { x: 65, y: 130 }, { x: 65, y: 105 }] }, "edge-alt-board": { points: [{ x: 285, y: 120 }, { x: 305, y: 120 }, { x: 305, y: 165 }, { x: 285, y: 165 }] }, "edge-alt-storage": { points: [{ x: 365, y: 100 }, { x: 385, y: 100 }, { x: 385, y: 145 }, { x: 390, y: 145 }] }, "edge-input-intent": { points: [{ x: 36, y: 184 }, { x: 50, y: 184 }, { x: 50, y: 165 }, { x: 70, y: 165 }] }, "edge-input-agent": { points: [{ x: 182, y: 188 }, { x: 200, y: 188 }, { x: 200, y: 118 }, { x: 220, y: 118 }] }, "edge-input-files": { points: [{ x: 257, y: 188 }, { x: 270, y: 188 }, { x: 270, y: 98 }, { x: 280, y: 98 }] }, "edge-input-links": { points: [{ x: 354, y: 178 }, { x: 360, y: 178 }, { x: 360, y: 77 }, { x: 365, y: 77 }] }, "edge-input-context": { points: [{ x: 462, y: 150 }, { x: 470, y: 150 }, { x: 470, y: 55 }, { x: 445, y: 55 }] }, "edge-compound": { points: [{ x: 555, y: 65 }, { x: 575, y: 65 }, { x: 575, y: 125 }, { x: 445, y: 125 }, { x: 445, y: 80 }] }
           },
           groups: { "phase-conversation": { bounds: { x: 18, y: 92, width: 105, height: 108 } }, "phase-exploration": { bounds: { x: 124, y: 91, width: 140, height: 109 } }, "phase-structure": { bounds: { x: 268, y: 76, width: 78, height: 124 } }, "phase-knowledge-workspace": { bounds: { x: 348, y: 18, width: 228, height: 177 } } }
         },
@@ -137,6 +137,7 @@
     };
 
     const STAGE_COLORS = ["#6687a4", "#7a9b91", "#ad8c69", "#8b7baa", "#b27668", "#738e87", "#c17a4e"];
+    const GRID_STEP = 20;
     const scene = document.getElementById("scene");
     const sourceStatus = document.getElementById("source-status");
     let currentDiagram = null;
@@ -149,8 +150,10 @@
       return { nodes: merge("nodes"), routes: merge("routes"), groups: merge("groups"), view: { ...(diagram.composition?.defaultView || {}), ...(overrides.view || {}) } };
     }
 
-    function project({ x, y, elevation = 0 }) {
-      return { x: 82 + x * 1.42 + y * .56, y: 568 + y * .66 - x * .2 - elevation * 1.7 };
+    function project(point) {
+      const { x, y } = point;
+      const z = point.z ?? point.elevation ?? 0;
+      return { x: 82 + x * 1.42 + y * .56, y: 568 + y * .66 - x * .2 - z * 1.7 };
     }
     function pointsString(points) { return points.map((point) => { const p = project(point); return `${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(" "); }
     function rectPoints(rect) { return pointsString([{ x: rect.x, y: rect.y }, { x: rect.x + rect.width, y: rect.y }, { x: rect.x + rect.width, y: rect.y + rect.height }, { x: rect.x, y: rect.y + rect.height }]); }
@@ -158,25 +161,175 @@
     function text(x, y, value, size = 11, fill = "#24303b", weight = 500, anchor = "middle") { return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" fill="${fill}" font-family="Inter, sans-serif" font-size="${size}" font-weight="${weight}">${String(value).replace(/[&<>]/g, (match) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[match]))}</text>`; }
     function nodeCenter(layout) { const p = project({ x: layout.x + layout.width / 2, y: layout.y + layout.height / 2, elevation: layout.elevation || 0 }); return p; }
 
+    function mixColor(from, to, amount) {
+      const parse = (value) => value.match(/[0-9a-f]{2}/gi).map((part) => Number.parseInt(part, 16));
+      const a = parse(from);
+      const b = parse(to);
+      return `#${a.map((channel, index) => Math.round(channel + (b[index] - channel) * amount).toString(16).padStart(2, "0")).join("")}`;
+    }
+
+    function faceTones(color) {
+      return {
+        top: mixColor(color, "#f0dfc5", .16),
+        front: mixColor(color, "#28343a", .34),
+        side: mixColor(color, "#1c272d", .52),
+        edge: mixColor(color, "#1d2a31", .64)
+      };
+    }
+
+    function surfacePoints(rect, z = 0) {
+      return [
+        project({ x: rect.x, y: rect.y, z }),
+        project({ x: rect.x + rect.width, y: rect.y, z }),
+        project({ x: rect.x + rect.width, y: rect.y + rect.height, z }),
+        project({ x: rect.x, y: rect.y + rect.height, z })
+      ];
+    }
+
+    function polygon(points, fill, stroke = "none", strokeWidth = 0) {
+      return `<polygon points="${points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ")}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`;
+    }
+
+    function extrudedRect(rect, baseZ, height, tones) {
+      const base = surfacePoints(rect, baseZ);
+      const top = surfacePoints(rect, baseZ + height);
+      return [
+        polygon([top[3], top[2], base[2], base[3]], tones.front, tones.edge, .55),
+        polygon([top[1], top[2], base[2], base[1]], tones.side, tones.edge, .55),
+        polygon(top, tones.top, tones.edge, .75)
+      ].join("");
+    }
+
+    function topOutline(rect, z, color, dash = "") {
+      const top = surfacePoints(rect, z);
+      const points = [...top, top[0]];
+      return `<polyline points="${points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ")}" fill="none" stroke="${color}" stroke-width=".8"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`;
+    }
+
+    function renderStageGeometry(node, layout, stageIndex) {
+      const scale = layout.scale || 1;
+      const rect = { x: layout.x, y: layout.y, width: layout.width * scale, height: layout.height * scale };
+      const baseZ = layout.elevation || 0;
+      const color = STAGE_COLORS[stageIndex % STAGE_COLORS.length];
+      const tones = faceTones(color);
+      const pieces = [];
+      let labelZ = baseZ + 5;
+
+      if (node.label === "LINE") {
+        const platform = { x: rect.x + 4, y: rect.y + rect.height * .27, width: rect.width - 8, height: rect.height * .46 };
+        pieces.push(extrudedRect(platform, baseZ, 2.5, tones));
+        const count = node.properties?.cardCount || 6;
+        const gap = 1.6;
+        const tileWidth = (platform.width - 7 - gap * (count - 1)) / count;
+        for (let index = 0; index < count; index += 1) {
+          const tile = { x: platform.x + 3.5 + index * (tileWidth + gap), y: platform.y + 2.2, width: tileWidth, height: platform.height - 4.4 };
+          pieces.push(extrudedRect(tile, baseZ + 2.5, 3.4 + (index % 2) * 1.2, faceTones(mixColor(color, "#ead4b5", index / Math.max(1, count) * .22))));
+        }
+        labelZ = baseZ + 7;
+      } else if (node.label === "BRANCH") {
+        const platform = { x: rect.x + 5, y: rect.y + rect.height * .33, width: rect.width - 10, height: rect.height * .34 };
+        pieces.push(extrudedRect(platform, baseZ, 2.5, tones));
+        const branchCount = node.properties?.branchCount || 3;
+        const spine = { x: rect.x + rect.width * .12, y: rect.y + rect.height * .47, width: rect.width * .72, height: 3.5 };
+        pieces.push(extrudedRect(spine, baseZ + 2.5, 3.2, tones));
+        for (let index = 0; index < branchCount; index += 1) {
+          const branch = { x: rect.x + rect.width * (.17 + index * .23), y: rect.y + rect.height * .12, width: 4.5, height: rect.height * .72 };
+          pieces.push(extrudedRect(branch, baseZ + 2.5, 6.5 + index * .8, faceTones(mixColor(color, "#f2d7ae", index / Math.max(1, branchCount) * .18))));
+        }
+        labelZ = baseZ + 10;
+      } else if (node.label === "CARD") {
+        const plinth = { x: rect.x + 5, y: rect.y + 5, width: rect.width - 10, height: rect.height - 10 };
+        pieces.push(extrudedRect(plinth, baseZ, 2.2, tones));
+        const card = { x: rect.x + 9, y: rect.y + 7, width: rect.width - 18, height: rect.height - 13 };
+        pieces.push(extrudedRect(card, baseZ + 2.2, 7.5, faceTones(mixColor(color, "#f1d7b1", .18))));
+        pieces.push(topOutline({ x: card.x + 4, y: card.y + 4, width: card.width - 8, height: card.height - 8 }, baseZ + 10, tones.edge, "2 2"));
+        const fold = surfacePoints(card, baseZ + 10);
+        pieces.push(`<line x1="${fold[0].x.toFixed(1)}" y1="${fold[0].y.toFixed(1)}" x2="${fold[2].x.toFixed(1)}" y2="${fold[2].y.toFixed(1)}" stroke="${tones.edge}" stroke-width=".7" opacity=".72"/>`);
+        labelZ = baseZ + 10;
+      } else if (node.label === "FIELD") {
+        const platform = { x: rect.x + 3, y: rect.y + 3, width: rect.width - 6, height: rect.height - 6 };
+        pieces.push(extrudedRect(platform, baseZ, 2.2, tones));
+        const columns = node.properties?.columns || 4;
+        const rows = node.properties?.rows || 3;
+        const gap = 2.5;
+        const tileWidth = (platform.width - gap * (columns + 1)) / columns;
+        const tileHeight = (platform.height - gap * (rows + 1)) / rows;
+        for (let row = 0; row < rows; row += 1) {
+          for (let column = 0; column < columns; column += 1) {
+            const tile = { x: platform.x + gap + column * (tileWidth + gap), y: platform.y + gap + row * (tileHeight + gap), width: tileWidth, height: tileHeight };
+            pieces.push(extrudedRect(tile, baseZ + 2.2, 2.2 + ((row + column) % 2) * 1.2, faceTones((row + column) % 2 ? mixColor(color, "#f0d5af", .13) : color)));
+          }
+        }
+        labelZ = baseZ + 6;
+      } else if (node.label === "ARCHIVE") {
+        const base = { x: rect.x + 5, y: rect.y + rect.height * .62, width: rect.width - 10, height: rect.height * .22 };
+        pieces.push(extrudedRect(base, baseZ, 2.2, tones));
+        const levels = node.properties?.levels || 4;
+        const spine = { x: rect.x + rect.width * .46, y: rect.y + rect.height * .14, width: 4.5, height: rect.height * .7 };
+        pieces.push(extrudedRect(spine, baseZ + 2.2, 15, tones));
+        for (let level = 0; level < levels; level += 1) {
+          const shelf = { x: rect.x + 3 + level * 1.2, y: rect.y + rect.height * (.12 + level * .16), width: rect.width - 6 - level * 2.4, height: 4.5 };
+          pieces.push(extrudedRect(shelf, baseZ + 3.2 + level * 5.4, 2.1, faceTones(mixColor(color, "#f0d4ae", level / Math.max(1, levels) * .18))));
+        }
+        labelZ = baseZ + 22;
+      } else if (node.label === "CONTEXT") {
+        const layers = node.properties?.layers || 3;
+        for (let layer = 0; layer < layers; layer += 1) {
+          const plate = { x: rect.x + layer * 3, y: rect.y + layer * 2, width: rect.width - layer * 6, height: rect.height - layer * 4 };
+          pieces.push(extrudedRect(plate, baseZ + layer * 6, 3.4, faceTones(mixColor(color, "#f2d8b3", layer / Math.max(1, layers) * .2))));
+          pieces.push(topOutline({ x: plate.x + 4, y: plate.y + 4, width: plate.width - 8, height: plate.height - 8 }, baseZ + layer * 6 + 3.4, tones.edge, "3 2"));
+        }
+        labelZ = baseZ + layers * 6 + 5;
+      } else if (node.label === "WORKBENCH") {
+        const base = { x: rect.x + 3, y: rect.y + rect.height * .56, width: rect.width - 6, height: rect.height * .31 };
+        pieces.push(extrudedRect(base, baseZ, 2.5, tones));
+        const postSize = 5;
+        const postZ = baseZ + 2.5;
+        const postHeight = 18;
+        for (const point of [{ x: rect.x + 6, y: rect.y + 5 }, { x: rect.x + rect.width - 11, y: rect.y + 5 }, { x: rect.x + 6, y: rect.y + rect.height - 12 }, { x: rect.x + rect.width - 11, y: rect.y + rect.height - 12 }]) {
+          pieces.push(extrudedRect({ x: point.x, y: point.y, width: postSize, height: postSize }, postZ, postHeight, tones));
+        }
+        const roof = { x: rect.x + 1, y: rect.y + 1, width: rect.width - 2, height: rect.height - 2 };
+        pieces.push(extrudedRect(roof, postZ + postHeight, 2.5, faceTones(mixColor(color, "#f0d7b2", .16))));
+        const modules = node.properties?.modules || 5;
+        for (let index = 0; index < modules; index += 1) {
+          const module = { x: base.x + 6 + index * ((base.width - 16) / modules), y: base.y + 3, width: Math.max(4, (base.width - 20) / modules), height: base.height - 6 };
+          pieces.push(extrudedRect(module, baseZ + 2.5, 2.5 + (index % 2), faceTones(mixColor(color, "#f2d5ad", index / Math.max(1, modules) * .18))));
+        }
+        labelZ = postZ + postHeight + 5;
+      } else {
+        pieces.push(extrudedRect(rect, baseZ, 7, tones));
+        labelZ = baseZ + 9;
+      }
+
+      const labelPoint = project({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, z: labelZ });
+      const labelSize = node.visualRole === "main-stage" ? 10.5 : 8.5;
+      const labelColor = node.visualRole === "main-stage" ? "#203039" : "#4f4c45";
+      pieces.push(text(labelPoint.x, labelPoint.y + 3, node.label, labelSize, labelColor, 750));
+      return `<g data-node-id="${node.id}" filter="${node.visualRole === "main-stage" ? "url(#soft-shadow)" : "none"}">${pieces.join("")}</g>`;
+    }
+
     function renderNode(node, layout, stageIndex) {
-      const p0 = project({ x: layout.x, y: layout.y, elevation: layout.elevation || 0 });
-      const p1 = project({ x: layout.x + layout.width, y: layout.y, elevation: layout.elevation || 0 });
-      const p2 = project({ x: layout.x + layout.width, y: layout.y + layout.height, elevation: layout.elevation || 0 });
-      const p3 = project({ x: layout.x, y: layout.y + layout.height, elevation: layout.elevation || 0 });
-      const depth = node.visualRole === "main-stage" ? 15 + (layout.elevation || 0) * .24 : 8;
-      const color = node.visualRole === "main-stage" ? STAGE_COLORS[stageIndex % STAGE_COLORS.length] : node.visualRole === "alternative" ? "#aaa49a" : "#c66a43";
-      const opacity = node.visualRole === "main-stage" ? 1 : .68;
-      const labelPoint = { x: (p0.x + p1.x + p2.x + p3.x) / 4, y: (p0.y + p1.y + p2.y + p3.y) / 4 };
-      const body = `<polygon points="${p3.x},${p3.y} ${p2.x},${p2.y} ${p2.x},${p2.y + depth} ${p3.x},${p3.y + depth}" fill="${color}" opacity="${opacity * .62}"/><polygon points="${p1.x},${p1.y} ${p2.x},${p2.y} ${p2.x},${p2.y + depth} ${p1.x},${p1.y + depth}" fill="${color}" opacity="${opacity * .78}"/><polygon points="${p0.x},${p0.y} ${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}" fill="${color}" opacity="${opacity}" stroke="#fffdf9" stroke-width="1.2"/>`;
-      const label = text(labelPoint.x, labelPoint.y + 3, node.label, node.visualRole === "main-stage" ? 11 : 8.5, "#fffdf9", 700);
-      return `<g data-node-id="${node.id}" filter="${node.visualRole === "main-stage" ? "url(#soft-shadow)" : "none"}">${body}${label}</g>`;
+      return renderStageGeometry(node, layout, stageIndex);
+    }
+
+    function renderPlanGrid() {
+      const lines = [];
+      for (let x = 0; x <= 594; x += GRID_STEP) {
+        lines.push(`<line x1="${project({ x, y: 0 }).x.toFixed(1)}" y1="${project({ x, y: 0 }).y.toFixed(1)}" x2="${project({ x, y: 210 }).x.toFixed(1)}" y2="${project({ x, y: 210 }).y.toFixed(1)}"/>`);
+      }
+      for (let y = 0; y <= 210; y += GRID_STEP) {
+        lines.push(`<line x1="${project({ x: 0, y }).x.toFixed(1)}" y1="${project({ x: 0, y }).y.toFixed(1)}" x2="${project({ x: 594, y }).x.toFixed(1)}" y2="${project({ x: 594, y }).y.toFixed(1)}"/>`);
+      }
+      return `<g class="plan-grid" stroke="#89928f" stroke-width=".55" opacity=".18">${lines.join("")}</g>${text(1015, 642, `${GRID_STEP} mm GRID`, 8, "#89928f", 650, "end")}`;
     }
 
     function routeMarkup(edge, route) {
       const role = edge.visualRole;
       const style = role === "main-flow" ? "stroke:#4f718b;stroke-width:2.4;" : role === "alternative" ? "stroke:#9b9a95;stroke-width:1.5;stroke-dasharray:6 5;" : role === "external-input" ? "stroke:#c66a43;stroke-width:1.4;stroke-dasharray:2 5;" : "stroke:#7467a8;stroke-width:1.8;stroke-dasharray:8 4;";
       const marker = role === "main-flow" ? "arrow-main" : role === "alternative" ? "arrow-alt" : role === "external-input" ? "arrow-input" : "arrow-loop";
-      return `<polyline points="${pointsString(route.points)}" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#${marker})" style="${style}"/>`;
+      const bendPoints = route.points.slice(1, -1).map((point) => { const p = project(point); return `<rect x="${(p.x - 1.3).toFixed(1)}" y="${(p.y - 1.3).toFixed(1)}" width="2.6" height="2.6" fill="#f7f4ee" stroke="#4f718b" stroke-width=".55"/>`; }).join("");
+      return `<g data-route-id="${edge.id}"><polyline points="${pointsString(route.points)}" fill="none" stroke-linecap="square" stroke-linejoin="miter" marker-end="url(#${marker})" style="${style}"/>${bendPoints}</g>`;
     }
 
     function annotationMarkup(annotation, diagram, layout) {
@@ -201,6 +354,7 @@
       const leftPage = [{ x: 0, y: 0 }, { x: 297, y: 0 }, { x: 297, y: 210 }, { x: 0, y: 210 }];
       const rightPage = [{ x: 297, y: 0 }, { x: 594, y: 0 }, { x: 594, y: 210 }, { x: 297, y: 210 }];
       pieces.push(`<polygon points="${pointsString(leftPage)}" fill="#fbfaf7" stroke="#ded8ce" stroke-width="1"/><polygon points="${pointsString(rightPage)}" fill="#f7f4ed" stroke="#ded8ce" stroke-width="1"/>`);
+      pieces.push(renderPlanGrid());
       pieces.push(`<polygon points="${pointsString([{ x: 291, y: 0 }, { x: 303, y: 0 }, { x: 303, y: 210 }, { x: 291, y: 210 }])}" fill="#706a61" opacity=".08"/><path d="M${project({ x: 297, y: 0 }).x} ${project({ x: 297, y: 0 }).y} L${project({ x: 297, y: 210 }).x} ${project({ x: 297, y: 210 }).y}" stroke="#706a61" stroke-dasharray="4 5" stroke-width="1"/>${text(project({ x: 297, y: 8 }).x, project({ x: 297, y: 8 }).y - 6, "A4 GUTTER", 8, "#77736b", 650)}`);
       semantic.groups.forEach((group) => { const bounds = layout.groups[group.id]?.bounds; if (!bounds) return; pieces.push(`<polygon points="${rectPoints(bounds)}" fill="#d9d3c8" opacity=".06" stroke="#9e9588" stroke-width="1" stroke-dasharray="5 5"/>${text(project({ x: bounds.x + 3, y: bounds.y + 5 }).x, project({ x: bounds.x + 3, y: bounds.y + 5 }).y, group.label, 9, "#8c8376", 650, "start")}`); });
       semantic.edges.forEach((edge) => { const route = layout.routes[edge.id]; if (route) pieces.push(routeMarkup(edge, route)); });

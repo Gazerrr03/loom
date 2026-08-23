@@ -210,7 +210,7 @@
       const scale = layout.scale || 1;
       const rect = { x: layout.x, y: layout.y, width: layout.width * scale, height: layout.height * scale };
       const baseZ = layout.elevation || 0;
-      const color = STAGE_COLORS[stageIndex % STAGE_COLORS.length];
+      const color = node.visualRole === "main-stage" ? STAGE_COLORS[stageIndex % STAGE_COLORS.length] : node.visualRole === "alternative" ? "#aaa49a" : "#c66a43";
       const tones = faceTones(color);
       const pieces = [];
       let labelZ = baseZ + 5;

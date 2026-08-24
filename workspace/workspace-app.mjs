@@ -215,6 +215,19 @@ function project(point) {
   return { x: 82 + point.x * 1.42 + point.y * .56, y: 568 + point.y * .66 - point.x * .2 - z * 1.7 };
 }
 
+function rotateDiagramPoint(point, center, rotationYDeg = 0) {
+  const radians = rotationYDeg * Math.PI / 180;
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  return {
+    ...point,
+    x: center.x + dx * cos - dy * sin,
+    y: center.y + dx * sin + dy * cos,
+  };
+}
+
 function pointString(points) {
   return points.map((point) => {
     const projected = project(point);
@@ -231,18 +244,18 @@ function polygon(points, fill, stroke = "none", strokeWidth = 0) {
   return shape;
 }
 
-function surfacePoints(rect, z = 0) {
+function surfacePoints(rect, z = 0, projectPoint = project) {
   return [
-    project({ x: rect.x, y: rect.y, z }),
-    project({ x: rect.x + rect.width, y: rect.y, z }),
-    project({ x: rect.x + rect.width, y: rect.y + rect.height, z }),
-    project({ x: rect.x, y: rect.y + rect.height, z }),
+    projectPoint({ x: rect.x, y: rect.y, z }),
+    projectPoint({ x: rect.x + rect.width, y: rect.y, z }),
+    projectPoint({ x: rect.x + rect.width, y: rect.y + rect.height, z }),
+    projectPoint({ x: rect.x, y: rect.y + rect.height, z }),
   ];
 }
 
-function extrudedRect(parent, rect, baseZ, height, tones) {
-  const base = surfacePoints(rect, baseZ);
-  const top = surfacePoints(rect, baseZ + height);
+function extrudedRect(parent, rect, baseZ, height, tones, projectPoint = project) {
+  const base = surfacePoints(rect, baseZ, projectPoint);
+  const top = surfacePoints(rect, baseZ + height, projectPoint);
   parent.append(
     polygon([top[3], top[2], base[2], base[3]], tones.front, tones.edge, .65),
     polygon([top[1], top[2], base[2], base[1]], tones.side, tones.edge, .65),
@@ -260,30 +273,32 @@ function renderNode(parent, node, layout, index) {
   const group = svg("g", { class: "workspace-node", "data-node-id": node.id, tabindex: "0", role: "button", "aria-label": `${node.label} ${node.id}` });
   const scale = layout.scale ?? 1;
   const rect = { x: layout.x, y: layout.y, width: layout.width * scale, height: layout.height * scale };
+  const diagramCenter = { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+  const projectNodePoint = (point) => project(rotateDiagramPoint(point, diagramCenter, layout.rotationYDeg ?? 0));
   const color = node.visualRole === "alternative" ? "#aaa49a" : node.visualRole === "external-input" ? "#c66a43" : STAGE_COLORS[index % STAGE_COLORS.length];
   const tones = faceTones(color);
   const height = node.visualRole === "main-stage" ? 7 + (layout.elevation ?? 0) * .12 : 3;
   if (node.label === "FIELD") {
-    extrudedRect(group, { ...rect, x: rect.x + 2, y: rect.y + 2, width: rect.width - 4, height: rect.height - 4 }, layout.elevation ?? 0, height, tones);
+    extrudedRect(group, { ...rect, x: rect.x + 2, y: rect.y + 2, width: rect.width - 4, height: rect.height - 4 }, layout.elevation ?? 0, height, tones, projectNodePoint);
     for (let row = 1; row < 3; row += 1) {
-      const a = project({ x: rect.x + 4, y: rect.y + rect.height * row / 3, z: (layout.elevation ?? 0) + height + .2 });
-      const b = project({ x: rect.x + rect.width - 4, y: rect.y + rect.height * row / 3, z: (layout.elevation ?? 0) + height + .2 });
+      const a = projectNodePoint({ x: rect.x + 4, y: rect.y + rect.height * row / 3, z: (layout.elevation ?? 0) + height + .2 });
+      const b = projectNodePoint({ x: rect.x + rect.width - 4, y: rect.y + rect.height * row / 3, z: (layout.elevation ?? 0) + height + .2 });
       group.append(svg("line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: tones.edge, "stroke-width": .55, opacity: .5 }));
     }
   } else if (node.label === "BRANCH") {
-    extrudedRect(group, { ...rect, x: rect.x + 4, y: rect.y + rect.height * .35, width: rect.width - 8, height: rect.height * .28 }, layout.elevation ?? 0, height, tones);
-    for (let branch = 0; branch < 3; branch += 1) extrudedRect(group, { x: rect.x + rect.width * (.2 + branch * .25), y: rect.y + rect.height * .12, width: 4, height: rect.height * .7 }, (layout.elevation ?? 0) + height, 4 + branch, tones);
+    extrudedRect(group, { ...rect, x: rect.x + 4, y: rect.y + rect.height * .35, width: rect.width - 8, height: rect.height * .28 }, layout.elevation ?? 0, height, tones, projectNodePoint);
+    for (let branch = 0; branch < 3; branch += 1) extrudedRect(group, { x: rect.x + rect.width * (.2 + branch * .25), y: rect.y + rect.height * .12, width: 4, height: rect.height * .7 }, (layout.elevation ?? 0) + height, 4 + branch, tones, projectNodePoint);
   } else if (node.label === "LINE") {
-    extrudedRect(group, { ...rect, x: rect.x + 3, y: rect.y + rect.height * .3, width: rect.width - 6, height: rect.height * .4 }, layout.elevation ?? 0, height, tones);
+    extrudedRect(group, { ...rect, x: rect.x + 3, y: rect.y + rect.height * .3, width: rect.width - 6, height: rect.height * .4 }, layout.elevation ?? 0, height, tones, projectNodePoint);
     const count = node.properties?.cardCount ?? 6;
-    for (let card = 0; card < Math.min(count, 6); card += 1) extrudedRect(group, { x: rect.x + 6 + card * ((rect.width - 12) / 6), y: rect.y + rect.height * .35, width: (rect.width - 18) / 6, height: rect.height * .3 }, (layout.elevation ?? 0) + height, 2.2 + card % 2, tones);
+    for (let card = 0; card < Math.min(count, 6); card += 1) extrudedRect(group, { x: rect.x + 6 + card * ((rect.width - 12) / 6), y: rect.y + rect.height * .35, width: (rect.width - 18) / 6, height: rect.height * .3 }, (layout.elevation ?? 0) + height, 2.2 + card % 2, tones, projectNodePoint);
   } else {
-    extrudedRect(group, rect, layout.elevation ?? 0, height, tones);
+    extrudedRect(group, rect, layout.elevation ?? 0, height, tones, projectNodePoint);
   }
-  const center = project({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, z: (layout.elevation ?? 0) + height + 2 });
-  label(group, { x: center.x, y: center.y + 4 }, node.label, node.visualRole === "alternative" ? "#5e5d58" : "#26343b");
+  const labelCenter = projectNodePoint({ x: diagramCenter.x, y: diagramCenter.y, z: (layout.elevation ?? 0) + height + 2 });
+  label(group, { x: labelCenter.x, y: labelCenter.y + 4 }, node.label, node.visualRole === "alternative" ? "#5e5d58" : "#26343b");
   if (state.selectedId === node.id) {
-    const outline = surfacePoints(rect, (layout.elevation ?? 0) + height + 1);
+    const outline = surfacePoints(rect, (layout.elevation ?? 0) + height + 1, projectNodePoint);
     group.append(svg("polyline", { points: [...outline, outline[0]].map((point) => `${point.x},${point.y}`).join(" "), fill: "none", stroke: "#c66a43", "stroke-width": 2, "stroke-dasharray": "5 4" }));
     group.setAttribute("aria-selected", "true");
   } else group.setAttribute("aria-selected", "false");

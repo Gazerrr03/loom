@@ -28,7 +28,14 @@ async function fixture() {
     assetFormats: ["glb", "gltf"],
     features: ["orthographic-camera", "instancing"],
   };
-  return { artifact, resolver: createComponentResolver({ catalog, registry, manifests, capabilities }) };
+  return {
+    artifact,
+    catalog,
+    registry,
+    manifests,
+    capabilities,
+    resolver: createComponentResolver({ catalog, registry, manifests, capabilities }),
+  };
 }
 
 test("one resolver resolves all seven Golden Templates with match reasons and stable fingerprints", async () => {
@@ -91,6 +98,20 @@ test("missing asset availability remains visible and blocks PNG without deleting
   assert.equal(result.pngGate.status, "blocked");
   assert.deepEqual(result.pngGate.error.objectIds, ["asset-authorized-model"]);
   assert.equal(result.assets["asset-authorized-model"].availability.status, "missing");
+});
+
+test("a manifest asset dependency keeps its missing asset ID in the node result", async () => {
+  const { artifact, catalog, registry, manifests, capabilities } = await fixture();
+  const nextManifests = structuredClone(manifests);
+  nextManifests.find((manifest) => manifest.id === "flovvas-line").dependencies.assetRefs = ["asset-line-model"];
+  const resolver = createComponentResolver({ catalog, registry, manifests: nextManifests, capabilities });
+  const node = artifact.semantic.nodes.find((candidate) => candidate.id === "stage-line");
+  const result = resolver.resolveNode(node);
+  assert.deepEqual(result.assets, [{
+    assetId: "asset-line-model",
+    status: "missing",
+    warning: "Component asset reference does not resolve.",
+  }]);
 });
 
 test("invalid parameters produce a structured error while preserving node identity", async () => {

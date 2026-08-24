@@ -136,9 +136,9 @@ function normalizeAvailability(availability) {
   return byId;
 }
 
-function assetStatus(asset, availability) {
+function assetStatus(asset, availability, assetId = asset?.id ?? null) {
   if (!asset) {
-    return { assetId: null, status: "missing", warning: "Component asset reference does not resolve." };
+    return { assetId, status: "missing", warning: "Component asset reference does not resolve." };
   }
   const entry = availability.get(asset.id);
   return entry ?? {
@@ -270,7 +270,7 @@ export function createComponentResolver({ catalog, registry, manifests, capabili
     const resolvedAssets = requiredAssetIds.map((assetId) => {
       const asset = assetsById.get(assetId);
       if (asset) assertAssetReference(asset);
-      return assetStatus(asset, availability);
+      return assetStatus(asset, availability, assetId);
     });
     const warnings = [
       ...(renderer.reasons ?? []),
@@ -339,4 +339,3 @@ export function createComponentResolver({ catalog, registry, manifests, capabili
     resolveArtifact,
   };
 }
-

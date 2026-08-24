@@ -215,6 +215,8 @@ P0 能力：
 
 M8-01 的本地运行入口固定为仓库根目录的 `node scripts/loom-healthcheck.mjs`、`node --test` 和 `python3 -m http.server 18768`。健康检查只验证仓库内可重复的 Core、Renderer-independent RenderDocument 与 MCP lifecycle 边界；它不会把外部 Codex 登录或 iCraft 授权当作本地成功证据。
 
+M8-04 的关闭清单位于 `issues/modules/00-mvp-parent.md`。当前仓库已经有可复核的 Gate 0–3 合同、Workspace 保存/PNG smoke 和 Gate 5 本地 healthcheck；真实 Codex 创建、三次往返、iCraft 授权 fixture 与作者 PNG 接受仍是明确的外部验收闸门。缺任一项时，M8 Parent 不得关闭。
+
 验收：
 
 - 从干净安装启动 Core、Workspace 和 MCP。

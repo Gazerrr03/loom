@@ -9,6 +9,7 @@ const appModule = await readFile(resolve(root, "workspace/workspace-app.mjs"), "
 const transformModule = await readFile(resolve(root, "workspace/transform-inspector.mjs"), "utf8");
 const viewModule = await readFile(resolve(root, "workspace/workspace-view.mjs"), "utf8");
 const routeModule = await readFile(resolve(root, "workspace/route-editor.mjs"), "utf8");
+const annotationModule = await readFile(resolve(root, "workspace/annotation-editor.mjs"), "utf8");
 
 test("Workspace 壳层声明三个可见协作表面", () => {
   assert.match(indexHtml, /id="component-list"/);
@@ -67,4 +68,16 @@ test("Workspace Canvas exposes route selection and one-shot control-point commit
   assert.match(routeModule, /createRouteEditor/);
   assert.match(routeModule, /applyDomainCommand/);
   assert.doesNotMatch(routeModule, /from\s+["']node:/);
+});
+
+test("Workspace Canvas exposes annotation selection and Inspector update boundary", () => {
+  assert.match(appModule, /data-annotation-id/);
+  assert.match(appModule, /selectAnnotation/);
+  assert.match(appModule, /getAnnotationState/);
+  assert.match(appModule, /annotation\.update/);
+  assert.match(appModule, /标注文本/);
+  assert.match(annotationModule, /createAnnotationEditor/);
+  assert.match(annotationModule, /resolveAnnotationAnchor/);
+  assert.match(annotationModule, /assertPresentationBoundary/);
+  assert.doesNotMatch(annotationModule, /from\s+["']node:/);
 });

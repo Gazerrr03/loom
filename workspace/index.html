@@ -69,6 +69,7 @@
     .workspace-route:focus { outline: none; }
     .workspace-route-handle { cursor: grab; filter: drop-shadow(0 2px 2px rgba(63,54,43,.18)); }
     .workspace-route-handle:active { cursor: grabbing; }
+    .workspace-annotation-hit { cursor: pointer; }
     .canvas-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 15px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
     .canvas-foot kbd { padding: 2px 5px; border: 1px solid var(--line); border-radius: 4px; background: #f7f3ec; font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
     .inspector-empty { color: var(--muted); font-size: 12px; line-height: 1.6; }
@@ -78,8 +79,9 @@
     .field { display: grid; gap: 4px; }
     .field label { color: var(--muted); font-size: 10px; }
     .field code, .revision { overflow-wrap: anywhere; padding: 7px 8px; border-radius: 7px; background: #f5f1e9; color: #52616a; font: 10px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .field input { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: #fbfaf6; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .field input:focus { border-color: #ca8a69; box-shadow: 0 0 0 3px rgba(198,106,67,.11); }
+    .field input, .field select, .field textarea { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: #fbfaf6; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #ca8a69; box-shadow: 0 0 0 3px rgba(198,106,67,.11); }
+    .field textarea { resize: vertical; line-height: 1.4; }
     .transform-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; padding-top: 2px; }
     .inspector-help { margin: -2px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
     .notice { margin-top: 12px; padding: 9px 10px; border: 1px solid #e5c7b6; border-radius: 8px; color: #8d543b; background: #fcf0e8; font-size: 11px; line-height: 1.45; }

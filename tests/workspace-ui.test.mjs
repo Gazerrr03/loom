@@ -10,6 +10,7 @@ const transformModule = await readFile(resolve(root, "workspace/transform-inspec
 const viewModule = await readFile(resolve(root, "workspace/workspace-view.mjs"), "utf8");
 const routeModule = await readFile(resolve(root, "workspace/route-editor.mjs"), "utf8");
 const annotationModule = await readFile(resolve(root, "workspace/annotation-editor.mjs"), "utf8");
+const historyModule = await readFile(resolve(root, "workspace/history-stack.mjs"), "utf8");
 
 test("Workspace 壳层声明三个可见协作表面", () => {
   assert.match(indexHtml, /id="component-list"/);
@@ -80,4 +81,16 @@ test("Workspace Canvas exposes annotation selection and Inspector update boundar
   assert.match(annotationModule, /resolveAnnotationAnchor/);
   assert.match(annotationModule, /assertPresentationBoundary/);
   assert.doesNotMatch(annotationModule, /from\s+["']node:/);
+});
+
+test("Workspace history buttons bridge complete edits without importing Node-only Core", () => {
+  assert.match(indexHtml, /id="undo-button"/);
+  assert.match(indexHtml, /id="redo-button"/);
+  assert.match(appModule, /handleUndo/);
+  assert.match(appModule, /handleRedo/);
+  assert.match(appModule, /getHistoryState/);
+  assert.match(historyModule, /commitHistoryTransaction/);
+  assert.match(historyModule, /undoHistoryStack/);
+  assert.match(historyModule, /redoHistoryStack/);
+  assert.doesNotMatch(historyModule, /from\s+["']node:/);
 });

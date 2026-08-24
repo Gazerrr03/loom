@@ -45,6 +45,14 @@ test("iCraft adapter declares public Player capabilities before loading", async 
   assert.deepEqual(adapter.getState(), { state: "idle", sceneId: null, sourceUri: null, mounted: false });
 });
 
+test("the browser smoke page uses the public Player bundle and the catalog scene URL without embedding scene data", async () => {
+  const html = await readFile(join(repoRoot, "diagrams/icraft-player-load-smoke.html"), "utf8");
+  assert.match(html, /@icraft\/player@2\.0\.2\/dist\/umd\/icraft-player\.min\.js/);
+  assert.match(html, /https:\/\/icraft\.gantcloud\.com\/api\/static\/templates\/AWSCloud\.iplayer/);
+  assert.match(html, /onReady/);
+  assert.equal(html.includes("privateSceneTree"), false);
+});
+
 test("a selected scene loads into the host without mutating the RenderDocument", async () => {
   const catalog = await readCatalog();
   const renderHost = host();

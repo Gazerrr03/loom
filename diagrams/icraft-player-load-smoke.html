@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Loom · iCraft Player load smoke</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; }
+    body { margin: 0; min-height: 100vh; background: #f4f1eb; color: #24303b; }
+    header { display: flex; justify-content: space-between; gap: 16px; padding: 18px 24px; border-bottom: 1px solid #d8d0c5; background: #fbfaf7; }
+    #status[data-state="ready"] { color: #287c62; }
+    #status[data-state="fallback"], #status[data-state="error"] { color: #a4513b; }
+    #scene { min-height: 70vh; margin: 24px; border: 1px solid #d8d0c5; background: #fff; }
+    footer { padding: 0 24px 24px; color: #69737b; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>LOOM / iCraft Player load smoke</strong>
+    <span id="status" data-state="loading">正在加载官方场景…</span>
+  </header>
+  <main id="scene" aria-label="iCraft scene host"></main>
+  <footer>
+    Source: https://icraft.gantcloud.com/api/static/templates/AWSCloud.iplayer · 仅验证公开 Player 加载，不写入 diagram.json。
+  </footer>
+  <script>
+    // The public UMD bundle creates a dedicated worker using its unpkg URL.
+    // Browsers reject that cross-origin Worker constructor, so this smoke page
+    // keeps the test self-contained by importing the same public chunk from a
+    // same-origin Blob worker. This shim is smoke-only; the product adapter
+    // still receives Worker/runtime policy from its host application.
+    (() => {
+      const NativeWorker = window.Worker;
+      window.Worker = class CrossOriginWorker {
+        constructor(url, options) {
+          const bootstrap = `importScripts(${JSON.stringify(String(url))});`;
+          const blob = URL.createObjectURL(new Blob([bootstrap], { type: "text/javascript" }));
+          this.worker = new NativeWorker(blob, options);
+          URL.revokeObjectURL(blob);
+        }
+
+        postMessage(...args) { return this.worker.postMessage(...args); }
+        terminate(...args) { return this.worker.terminate(...args); }
+        addEventListener(...args) { return this.worker.addEventListener(...args); }
+        removeEventListener(...args) { return this.worker.removeEventListener(...args); }
+        dispatchEvent(...args) { return this.worker.dispatchEvent(...args); }
+        get onmessage() { return this.worker.onmessage; }
+        set onmessage(value) { this.worker.onmessage = value; }
+        get onmessageerror() { return this.worker.onmessageerror; }
+        set onmessageerror(value) { this.worker.onmessageerror = value; }
+        get onerror() { return this.worker.onerror; }
+        set onerror(value) { this.worker.onerror = value; }
+      };
+    })();
+  </script>
+  <script src="https://unpkg.com/@icraft/player@2.0.2/dist/umd/icraft-player.min.js"></script>
+  <script>
+    const status = document.getElementById("status");
+    const host = document.getElementById("scene");
+    const source = "https://icraft.gantcloud.com/api/static/templates/AWSCloud.iplayer";
+    function setStatus(state, message) {
+      status.dataset.state = state;
+      status.textContent = message;
+    }
+    const loadTimeout = window.setTimeout(() => {
+      if (status.dataset.state === "loading") {
+        setStatus("fallback", "Player 已初始化，但官方场景尚未完成加载（来源/授权待复核）");
+      }
+    }, 15000);
+    try {
+      if (typeof window.ICraftPlayer !== "function") throw new Error("ICraftPlayer global is unavailable");
+      window.__loomIcraftPlayer = new window.ICraftPlayer({
+        src: source,
+        container: host,
+        onReady: () => {
+          window.clearTimeout(loadTimeout);
+          setStatus("ready", "加载成功（source unverified）");
+        },
+      });
+    } catch (error) {
+      window.clearTimeout(loadTimeout);
+      setStatus("error", `加载失败：${error.message}`);
+    }
+  </script>
+</body>
+</html>

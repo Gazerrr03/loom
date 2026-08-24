@@ -140,11 +140,8 @@ export function createIcraftPlayerAdapter({ catalog, playerFactory } = {}) {
       });
     }
     if (selection.assessment.status === "blocked") {
-      const code = selection.assessment.reasons.some((reason) => reason.includes("authorization"))
-        ? "missing-asset"
-        : "missing-asset";
       const error = createDiagramError({
-        code,
+        code: "missing-asset",
         message: `iCraft scene ${sceneId} cannot be loaded: ${selection.assessment.reasons.join("; ")}.`,
         objectIds: [sceneId],
         fieldPath: "assets",

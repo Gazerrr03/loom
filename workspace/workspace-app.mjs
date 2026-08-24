@@ -14,6 +14,10 @@ import {
   commitInspectorTransform,
   previewInspectorTransform,
 } from "./transform-inspector.mjs";
+import {
+  createWorkspaceView,
+  viewBasis,
+} from "./workspace-view.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 const GOLDEN_CASE_URL = "../examples/flovvas-massing.diagram.json";
@@ -38,6 +42,11 @@ const els = {
   undoButton: document.getElementById("undo-button"),
   redoButton: document.getElementById("redo-button"),
   exportButton: document.getElementById("export-button"),
+  viewZoomOutButton: document.getElementById("view-zoom-out"),
+  viewZoomInButton: document.getElementById("view-zoom-in"),
+  viewOrbitLeftButton: document.getElementById("view-orbit-left"),
+  viewOrbitRightButton: document.getElementById("view-orbit-right"),
+  viewResetButton: document.getElementById("view-reset"),
   dragHint: document.querySelector(".canvas-foot > span"),
   glbImportButton: null,
   glbFileInput: null,
@@ -64,11 +73,13 @@ const state = {
   exporting: false,
   lastExport: null,
   transformSequence: 0,
+  viewController: createWorkspaceView(),
+  viewPointer: null,
 };
 
 els.canvas.style.touchAction = "none";
 els.canvas.style.userSelect = "none";
-els.dragHint.textContent = "Click 选择 · Drag 可预览，松手后提交一次修改";
+els.dragHint.textContent = "Click 选择 · 空白 Drag 平移 · Wheel 缩放";
 
 const glbImportButton = document.createElement("button");
 glbImportButton.id = "import-glb-button";
@@ -210,9 +221,18 @@ function effectiveLayout(artifact) {
   };
 }
 
+function currentViewTransform() {
+  const view = state.viewController.getState();
+  return createIsometricTransform({
+    pan: view.pan,
+    zoom: view.zoom,
+    basis: viewBasis(view),
+  });
+}
+
 function project(point) {
   const z = point.z ?? point.elevation ?? 0;
-  return { x: 82 + point.x * 1.42 + point.y * .56, y: 568 + point.y * .66 - point.x * .2 - z * 1.7 };
+  return currentViewTransform().diagramToScreen(point, { z });
 }
 
 function rotateDiagramPoint(point, center, rotationYDeg = 0) {
@@ -555,6 +575,15 @@ function renderInspector() {
 function renderMeta() {
   els.title.textContent = state.fileName ?? "未打开 Diagram";
   els.canvasMeta.textContent = state.artifact ? `${state.artifact.semantic.nodes.length} nodes · ${state.artifact.semantic.edges.length} routes · ${state.revision}` : "未加载 RenderDocument";
+  const view = state.viewController.getState();
+  if (state.artifact) {
+    els.canvasMeta.textContent = [
+      state.artifact.semantic.nodes.length + " nodes",
+      state.artifact.semantic.edges.length + " routes",
+      state.revision,
+      "view " + view.zoom.toFixed(2) + "×",
+    ].join(" · ");
+  }
   const gate = state.artifact ? evaluateComponentExportGate(state.artifact) : { status: "blocked" };
   els.saveButton.disabled = !state.artifact || !state.dirty || state.saving;
   els.exportButton.disabled = !state.artifact || gate.status === "blocked" || state.exporting;
@@ -579,6 +608,8 @@ function setArtifact(artifact, fileName = "diagram.json") {
   state.activePointerId = null;
   state.dragging = false;
   state.moved = false;
+  state.viewController.reset();
+  state.viewPointer = null;
   state.componentError = null;
   state.lastExport = null;
   setStatus("ready", "Diagram 已加载");
@@ -744,7 +775,7 @@ function viewBoxPoint(event) {
 
 function diagramPointFromEvent(event, nodeId) {
   const layout = effectiveLayout(state.artifact).nodes[nodeId] ?? {};
-  const transform = createIsometricTransform();
+  const transform = currentViewTransform();
   return transform.screenToDiagram(viewBoxPoint(event), { z: layout.elevation ?? 0 });
 }
 
@@ -753,10 +784,27 @@ function nodeIdFromEvent(event) {
   return target?.dataset?.nodeId ?? null;
 }
 
+function startViewPointer(event) {
+  const point = viewBoxPoint(event);
+  state.viewPointer = {
+    pointerId: event.pointerId,
+    startPoint: point,
+    startPan: state.viewController.getState().pan,
+    moved: false,
+  };
+  els.canvas.setPointerCapture?.(event.pointerId);
+  setStatus("ready", "拖动空白区域平移视图");
+  event.preventDefault();
+}
+
 function handlePointerDown(event) {
   if (!state.artifact || !state.canvasController || event.button !== 0) return;
   const nodeId = nodeIdFromEvent(event);
-  if (!nodeId) return;
+  if (!nodeId) {
+    try { startViewPointer(event); }
+    catch (error) { setStatus("error", "视图平移未开始", error instanceof Error ? error : new Error(String(error))); }
+    return;
+  }
   try {
     const result = state.canvasController.pointerDown({
       nodeId,
@@ -776,6 +824,25 @@ function handlePointerDown(event) {
 }
 
 function handlePointerMove(event) {
+  if (state.viewPointer?.pointerId === event.pointerId) {
+    try {
+      const point = viewBoxPoint(event);
+      const start = state.viewPointer.startPoint;
+      const startPan = state.viewPointer.startPan;
+      state.viewController.setPan({
+        x: startPan.x + point.x - start.x,
+        y: startPan.y + point.y - start.y,
+      });
+      state.viewPointer.moved = true;
+      setStatus("ready", "视图平移中 · 松手完成");
+      renderMeta();
+      renderCanvas();
+      event.preventDefault();
+    } catch (error) {
+      setStatus("error", "视图平移失败", error instanceof Error ? error : new Error(String(error)));
+    }
+    return;
+  }
   if (state.activePointerId !== event.pointerId || !state.canvasController) return;
   const active = state.canvasController.getState().active;
   if (!active) return;
@@ -794,7 +861,22 @@ function handlePointerMove(event) {
   }
 }
 
+function finishViewPointer(event, cancelled = false) {
+  if (state.viewPointer?.pointerId !== event.pointerId) return false;
+  const viewPointer = state.viewPointer;
+  if (cancelled) state.viewController.setPan(viewPointer.startPan);
+  state.suppressClick = viewPointer.moved;
+  state.viewPointer = null;
+  els.canvas.releasePointerCapture?.(event.pointerId);
+  setStatus("ready", cancelled ? "已取消视图平移" : viewPointer.moved ? "视图已更新 · Diagram 未修改" : "未移动 · 视图未改变");
+  renderMeta();
+  renderCanvas();
+  event.preventDefault();
+  return true;
+}
+
 function finishPointer(event, cancelled = false) {
+  if (finishViewPointer(event, cancelled)) return;
   if (state.activePointerId !== event.pointerId || !state.canvasController) return;
   const active = state.canvasController.getState().active;
   let result;
@@ -825,8 +907,40 @@ function finishPointer(event, cancelled = false) {
   event.preventDefault();
 }
 
+function handleWheel(event) {
+  if (!state.artifact) return;
+  try {
+    const factor = Math.exp(-event.deltaY * 0.001);
+    state.viewController.zoomBy(factor);
+    setStatus("ready", "视图缩放中 · Diagram 未修改");
+    renderMeta();
+    renderCanvas();
+    event.preventDefault();
+  } catch (error) {
+    setStatus("error", "视图缩放失败", error instanceof Error ? error : new Error(String(error)));
+  }
+}
+
+function handleViewAction(action) {
+  if (action === "zoom-out") state.viewController.zoomBy(0.85);
+  else if (action === "zoom-in") state.viewController.zoomBy(1.15);
+  else if (action === "orbit-left") state.viewController.orbitBy({ azimuthDeg: -10 });
+  else if (action === "orbit-right") state.viewController.orbitBy({ azimuthDeg: 10 });
+  else if (action === "reset") state.viewController.reset();
+  else return;
+  setStatus("ready", action === "reset" ? "已重置等轴视图 · Diagram 未修改" : "视图已更新 · Diagram 未修改");
+  renderMeta();
+  renderCanvas();
+}
+
 function handleKeyDown(event) {
-  if (event.key !== "Escape" || state.activePointerId === null || !state.canvasController) return;
+  if (event.key !== "Escape") return;
+  if (state.viewPointer) {
+    finishViewPointer({ pointerId: state.viewPointer.pointerId, preventDefault: () => {} }, true);
+    event.preventDefault();
+    return;
+  }
+  if (state.activePointerId === null || !state.canvasController) return;
   const active = state.canvasController.getState().active;
   if (active) finishPointer({ pointerId: state.activePointerId, preventDefault: () => {} }, true);
   event.preventDefault();
@@ -844,6 +958,16 @@ els.canvas.addEventListener("pointerdown", handlePointerDown);
 els.canvas.addEventListener("pointermove", handlePointerMove);
 els.canvas.addEventListener("pointerup", (event) => finishPointer(event));
 els.canvas.addEventListener("pointercancel", (event) => finishPointer(event, true));
+els.canvas.addEventListener("wheel", handleWheel, { passive: false });
+for (const [element, action] of [
+  [els.viewZoomOutButton, "zoom-out"],
+  [els.viewZoomInButton, "zoom-in"],
+  [els.viewOrbitLeftButton, "orbit-left"],
+  [els.viewOrbitRightButton, "orbit-right"],
+  [els.viewResetButton, "reset"],
+]) {
+  element?.addEventListener("click", () => handleViewAction(action));
+}
 els.scene.addEventListener("click", () => {
   if (state.suppressClick) { state.suppressClick = false; return; }
   if (state.dragging) return;
@@ -857,6 +981,7 @@ window.addEventListener("keydown", handleKeyDown);
 window.LoomWorkspace = Object.freeze({
   getState: () => clone(state),
   getCanvasState: () => state.canvasController?.getState() ?? null,
+  getViewState: () => state.viewController.getState(),
   loadArtifact: (artifact, fileName) => setArtifact(artifact, fileName),
   loadUrl,
   selectNode,

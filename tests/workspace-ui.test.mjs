@@ -7,6 +7,7 @@ const root = resolve(import.meta.dirname, "..");
 const indexHtml = await readFile(resolve(root, "workspace/index.html"), "utf8");
 const appModule = await readFile(resolve(root, "workspace/workspace-app.mjs"), "utf8");
 const transformModule = await readFile(resolve(root, "workspace/transform-inspector.mjs"), "utf8");
+const viewModule = await readFile(resolve(root, "workspace/workspace-view.mjs"), "utf8");
 
 test("Workspace 壳层声明三个可见协作表面", () => {
   assert.match(indexHtml, /id="component-list"/);
@@ -42,4 +43,16 @@ test("Workspace Inspector exposes the four node transform controls through a bro
   assert.match(appModule, /commitInspectorTransform/);
   assert.match(transformModule, /applyDomainCommand/);
   assert.doesNotMatch(transformModule, /from\s+["']node:/);
+});
+
+test("Workspace Canvas exposes view-only navigation without coupling it to Artifact edits", () => {
+  for (const control of ["view-zoom-out", "view-zoom-in", "view-orbit-left", "view-orbit-right", "view-reset"]) {
+    assert.match(indexHtml, new RegExp(`id="${control}"`));
+  }
+  assert.match(appModule, /handleWheel/);
+  assert.match(appModule, /startViewPointer/);
+  assert.match(appModule, /getViewState/);
+  assert.match(viewModule, /createWorkspaceView/);
+  assert.match(viewModule, /viewBasis/);
+  assert.doesNotMatch(viewModule, /from\s+["']node:/);
 });

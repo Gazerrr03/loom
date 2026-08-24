@@ -1,7 +1,14 @@
 import { createIsometricTransform, createWorkspaceCanvas } from "./workspace-canvas.mjs";
+import {
+  evaluateComponentExportGate,
+  importUserGlbReference,
+  listComponentEntries,
+  replaceNodeComponent,
+} from "./component-panel.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 const GOLDEN_CASE_URL = "../examples/flovvas-massing.diagram.json";
+const COMPONENT_CATALOG_URL = "../examples/flovvas-template-catalog.json";
 const STAGE_COLORS = ["#6687a4", "#7a9b91", "#ad8c69", "#8b7baa", "#b27668", "#738e87", "#c17a4e"];
 const els = {
   app: document.getElementById("loom-workspace"),
@@ -23,6 +30,8 @@ const els = {
   redoButton: document.getElementById("redo-button"),
   exportButton: document.getElementById("export-button"),
   dragHint: document.querySelector(".canvas-foot > span"),
+  glbImportButton: null,
+  glbFileInput: null,
 };
 
 const state = {
@@ -40,11 +49,30 @@ const state = {
   dragging: false,
   moved: false,
   suppressClick: false,
+  catalog: null,
+  componentError: null,
 };
 
 els.canvas.style.touchAction = "none";
 els.canvas.style.userSelect = "none";
 els.dragHint.textContent = "Click 选择 · Drag 可预览，松手后提交一次修改";
+
+const glbImportButton = document.createElement("button");
+glbImportButton.id = "import-glb-button";
+glbImportButton.type = "button";
+glbImportButton.textContent = "导入 GLB / GLTF";
+glbImportButton.title = "只保存文件引用和未确认授权状态";
+glbImportButton.style.width = "100%";
+glbImportButton.style.marginBottom = "10px";
+const glbFileInput = document.createElement("input");
+glbFileInput.id = "glb-file-input";
+glbFileInput.type = "file";
+glbFileInput.accept = ".glb,.gltf,model/gltf-binary,model/gltf+json";
+glbFileInput.hidden = true;
+els.componentSearch.insertAdjacentElement("afterend", glbImportButton);
+els.componentSearch.insertAdjacentElement("afterend", glbFileInput);
+els.glbImportButton = glbImportButton;
+els.glbFileInput = glbFileInput;
 
 function clone(value) {
   return structuredClone(value);
@@ -213,44 +241,104 @@ function renderCanvas() {
   }
 }
 
+function fallbackComponentEntries() {
+  const query = state.query.trim().toLocaleLowerCase();
+  const seen = new Set();
+  return state.artifact.semantic.nodes.flatMap((node) => {
+    const key = node.componentRef ?? node.id;
+    if (seen.has(key)) return [];
+    seen.add(key);
+    const haystack = `${node.label} ${key} ${node.phase ?? ""}`.toLocaleLowerCase();
+    if (query && !haystack.includes(query)) return [];
+    return [{ kind: "reference", id: key, name: node.label, description: key, nodeId: node.id }];
+  });
+}
+
+function selectedComponentNode() {
+  return state.artifact?.semantic.nodes.find((node) => node.id === state.selectedId) ?? null;
+}
+
+function applyComponentArtifact(artifact, message) {
+  state.artifact = clone(artifact);
+  state.previewArtifact = null;
+  state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+  state.dirty = true;
+  state.componentError = null;
+  setStatus("dirty", message);
+  render();
+}
+
+function handleComponentEntry(entry) {
+  if (entry.kind === "reference") {
+    selectNode(entry.nodeId);
+    return;
+  }
+  if (!state.artifact || !state.selectedId) {
+    setStatus("ready", "先选择 Canvas 节点，再选择组件形态");
+    state.componentError = "组件替换需要先在 Canvas 选择一个 Scene Node。";
+    renderComponents();
+    return;
+  }
+  try {
+    const replacement = entry.kind === "asset"
+      ? replaceNodeComponent(state.artifact, { nodeId: state.selectedId, assetId: entry.id })
+      : replaceNodeComponent(state.artifact, { nodeId: state.selectedId, componentRef: entry.id });
+    applyComponentArtifact(replacement.artifact, entry.kind === "asset" ? "已绑定 GLB 引用 · 导出仍被授权门禁阻止" : `已将 ${state.selectedId} 替换为 ${entry.name}`);
+  } catch (error) {
+    state.componentError = error instanceof Error ? error.message : String(error);
+    setStatus("error", "组件替换失败", error instanceof Error ? error : new Error(String(error)));
+    renderComponents();
+  }
+}
+
 function renderComponents() {
   if (!state.artifact) {
     els.componentList.replaceChildren();
     els.componentCount.textContent = "等待加载";
     return;
   }
-  const query = state.query.trim().toLowerCase();
-  const components = [];
-  const seen = new Set();
-  for (const node of state.artifact.semantic.nodes) {
-    const key = node.componentRef ?? node.id;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const haystack = `${node.label} ${node.componentRef} ${node.phase ?? ""}`.toLowerCase();
-    if (query && !haystack.includes(query)) continue;
-    components.push({ key, node });
+  let entries;
+  try {
+    const node = selectedComponentNode();
+    entries = state.catalog
+      ? listComponentEntries({ catalog: state.catalog, artifact: state.artifact, nodeType: node?.type, query: state.query })
+      : fallbackComponentEntries();
+  } catch (error) {
+    state.componentError = error instanceof Error ? error.message : String(error);
+    entries = fallbackComponentEntries();
   }
-  els.componentCount.textContent = `${components.length} 个可见引用`;
+  const assetCount = entries.filter((entry) => entry.kind === "asset").length;
+  els.componentCount.textContent = `${entries.length} 个可用形态${assetCount ? ` · ${assetCount} 个 GLB 引用` : ""}`;
   els.componentList.replaceChildren();
-  for (const { key, node } of components) {
+  const selected = selectedComponentNode();
+  for (const entry of entries) {
     const button = document.createElement("button");
     button.className = "component";
     button.type = "button";
-    button.setAttribute("aria-current", state.selectedId === node.id ? "true" : "false");
+    button.setAttribute("aria-current", selected?.componentRef === entry.id || selected?.properties?.assetRef === entry.id ? "true" : "false");
+    button.setAttribute("aria-label", `${entry.name} · ${entry.kind === "asset" ? "GLB asset" : "template"}`);
     const swatch = document.createElement("span");
     swatch.className = "component-swatch";
+    if (entry.kind === "asset") swatch.style.background = "linear-gradient(145deg, #b7a5c8 0 30%, #625274 31% 75%, #2d263c 76%)";
     const copy = document.createElement("span");
     const name = document.createElement("span");
     name.className = "component-name";
-    name.textContent = node.label;
+    name.textContent = entry.name;
     const meta = document.createElement("span");
     meta.className = "component-meta";
-    meta.textContent = `${key} · ${node.phase ?? "unphased"}`;
+    meta.textContent = entry.kind === "asset"
+      ? `GLB · ${entry.export === "blocked" ? "授权未确认 / 导出阻止" : entry.license}`
+      : `模板 · ${entry.reasons?.[0]?.label ?? "可替换形态"}`;
     copy.append(name, meta);
     button.append(swatch, copy);
-    button.addEventListener("click", () => selectNode(node.id));
+    button.addEventListener("click", () => handleComponentEntry(entry));
     els.componentList.append(button);
   }
+  const gate = evaluateComponentExportGate(state.artifact);
+  const notice = state.componentError
+    ?? (gate.status === "blocked" ? `GLB 授权未确认：${gate.blockedAssets.map((asset) => asset.assetId).join("、")} · PNG 导出阻止` : null);
+  els.libraryNotice.hidden = !notice;
+  if (notice) els.libraryNotice.textContent = notice;
 }
 
 function renderInspector() {
@@ -309,6 +397,7 @@ function setArtifact(artifact, fileName = "diagram.json") {
   state.activePointerId = null;
   state.dragging = false;
   state.moved = false;
+  state.componentError = null;
   setStatus("ready", "Diagram 已加载");
   render();
 }
@@ -371,6 +460,37 @@ function handleFile(file) {
     render();
   });
   reader.readAsText(file);
+}
+
+async function loadComponentCatalog() {
+  try {
+    const response = await fetch(COMPONENT_CATALOG_URL, { cache: "no-store" });
+    if (!response.ok) throw new Error(`无法读取组件 Catalog（HTTP ${response.status}）`);
+    state.catalog = await response.json();
+    state.componentError = null;
+    renderComponents();
+  } catch (error) {
+    state.catalog = null;
+    state.componentError = error instanceof Error ? error.message : String(error);
+    renderComponents();
+  }
+}
+
+function handleGlbFile(file) {
+  if (!file || !state.artifact) return;
+  try {
+    const result = importUserGlbReference(state.artifact, {
+      fileName: file.name,
+      uri: file.webkitRelativePath || file.name,
+    });
+    applyComponentArtifact(result.artifact, `已导入 ${result.asset.id} · 只保存引用，授权未确认`);
+  } catch (error) {
+    state.componentError = error instanceof Error ? error.message : String(error);
+    setStatus("error", "GLB 导入失败", error instanceof Error ? error : new Error(String(error)));
+    renderComponents();
+  } finally {
+    els.glbFileInput.value = "";
+  }
 }
 
 function viewBoxPoint(event) {
@@ -476,6 +596,8 @@ els.openButton.addEventListener("click", () => els.fileInput.click());
 els.fileInput.addEventListener("change", () => handleFile(els.fileInput.files?.[0]));
 els.loadGoldenButton.addEventListener("click", () => loadUrl(GOLDEN_CASE_URL, "flovvas-massing.diagram.json"));
 els.componentSearch.addEventListener("input", (event) => { state.query = event.target.value; renderComponents(); });
+els.glbImportButton.addEventListener("click", () => els.glbFileInput.click());
+els.glbFileInput.addEventListener("change", () => handleGlbFile(els.glbFileInput.files?.[0]));
 els.canvas.addEventListener("pointerdown", handlePointerDown);
 els.canvas.addEventListener("pointermove", handlePointerMove);
 els.canvas.addEventListener("pointerup", (event) => finishPointer(event));
@@ -498,4 +620,5 @@ window.LoomWorkspace = Object.freeze({
   selectNode,
 });
 
+loadComponentCatalog();
 loadUrl(GOLDEN_CASE_URL, "flovvas-massing.diagram.json");

@@ -5,6 +5,11 @@ import {
   listComponentEntries,
   replaceNodeComponent,
 } from "./component-panel.mjs";
+import {
+  captureWorkspacePng,
+  createWorkspacePngPlan,
+  saveWorkspaceWithAdapter,
+} from "./workspace-storage.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 const GOLDEN_CASE_URL = "../examples/flovvas-massing.diagram.json";
@@ -51,6 +56,9 @@ const state = {
   suppressClick: false,
   catalog: null,
   componentError: null,
+  saving: false,
+  exporting: false,
+  lastExport: null,
 };
 
 els.canvas.style.touchAction = "none";
@@ -86,6 +94,82 @@ function svg(tag, attributes = {}) {
 
 function stableRevision(artifact) {
   return artifact.revision ?? `local:${artifact.id}:${artifact.metadata?.updatedAt ?? "draft"}`;
+}
+
+function jsonFileName(fileName) {
+  const leaf = String(fileName ?? "diagram.json").split(/[\\/]/).at(-1) || "diagram.json";
+  return /\.json$/i.test(leaf) ? leaf : `${leaf}.json`;
+}
+
+function pngFileName(fileName) {
+  return jsonFileName(fileName).replace(/\.json$/i, ".png");
+}
+
+function downloadBlob(blob, fileName) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.hidden = true;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+  return { outputRef: fileName };
+}
+
+async function downloadJson({ text, fileName }) {
+  return downloadBlob(new Blob([text], { type: "application/json;charset=utf-8" }), fileName);
+}
+
+async function captureCurrentCanvas({ request, composition }) {
+  const svgCopy = els.canvas.cloneNode(true);
+  svgCopy.setAttribute("xmlns", NS);
+  svgCopy.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+  svgCopy.setAttribute("width", String(request.options.widthPx));
+  svgCopy.setAttribute("height", String(request.options.heightPx));
+  svgCopy.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+  // Selection outlines and the authoring grid are editor-only guides, not PNG
+  // layers. The exported artifact remains the same Diagram revision.
+  svgCopy.querySelectorAll(".workspace-node[aria-selected=\"true\"] polyline").forEach((line) => line.remove());
+  svgCopy.querySelectorAll("#workspace-scene > rect").forEach((rect) => {
+    const fill = rect.getAttribute("fill") ?? "";
+    if (fill.includes("workspace-grid") || fill === "#d8c2ac") rect.remove();
+  });
+
+  const svgBlob = new Blob([new XMLSerializer().serializeToString(svgCopy)], { type: "image/svg+xml" });
+  const svgUrl = URL.createObjectURL(svgBlob);
+  try {
+    const image = new Image();
+    await new Promise((resolve, reject) => {
+      image.addEventListener("load", resolve, { once: true });
+      image.addEventListener("error", () => reject(new Error("Reference Renderer SVG could not be rasterized")), { once: true });
+      image.src = svgUrl;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = request.options.widthPx;
+    canvas.height = request.options.heightPx;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("PNG canvas context is unavailable");
+    if (!request.options.transparentBackground) {
+      context.fillStyle = "#faf8f2";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const pngBlob = await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("PNG encoding failed"))), "image/png");
+    });
+    const fileName = pngFileName(state.fileName);
+    return {
+      widthPx: canvas.width,
+      heightPx: canvas.height,
+      warnings: composition.warnings,
+      ...downloadBlob(pngBlob, fileName),
+    };
+  } finally {
+    URL.revokeObjectURL(svgUrl);
+  }
 }
 
 function assertArtifact(value) {
@@ -336,6 +420,7 @@ function renderComponents() {
   }
   const gate = evaluateComponentExportGate(state.artifact);
   const notice = state.componentError
+    ?? (state.error ? state.error.message : null)
     ?? (gate.status === "blocked" ? `GLB 授权未确认：${gate.blockedAssets.map((asset) => asset.assetId).join("、")} · PNG 导出阻止` : null);
   els.libraryNotice.hidden = !notice;
   if (notice) els.libraryNotice.textContent = notice;
@@ -373,9 +458,9 @@ function renderInspector() {
 function renderMeta() {
   els.title.textContent = state.fileName ?? "未打开 Diagram";
   els.canvasMeta.textContent = state.artifact ? `${state.artifact.semantic.nodes.length} nodes · ${state.artifact.semantic.edges.length} routes · ${state.revision}` : "未加载 RenderDocument";
-  // Save and PNG become actionable in the dedicated #111 exit issue.
-  els.saveButton.disabled = true;
-  els.exportButton.disabled = true;
+  const gate = state.artifact ? evaluateComponentExportGate(state.artifact) : { status: "blocked" };
+  els.saveButton.disabled = !state.artifact || !state.dirty || state.saving;
+  els.exportButton.disabled = !state.artifact || gate.status === "blocked" || state.exporting;
 }
 
 function render() {
@@ -398,8 +483,66 @@ function setArtifact(artifact, fileName = "diagram.json") {
   state.dragging = false;
   state.moved = false;
   state.componentError = null;
+  state.lastExport = null;
   setStatus("ready", "Diagram 已加载");
   render();
+}
+
+async function handleSave() {
+  if (!state.artifact || !state.dirty || state.saving) return;
+  state.saving = true;
+  setStatus("saving", "正在保存 diagram.json");
+  renderMeta();
+  try {
+    const receipt = await saveWorkspaceWithAdapter(state.artifact, {
+      fileName: state.fileName,
+      currentRevision: state.revision,
+      adapter: { save: downloadJson },
+    });
+    state.artifact = clone(receipt.artifact);
+    state.fileName = receipt.fileName;
+    state.revision = receipt.revision;
+    state.dirty = false;
+    state.previewArtifact = null;
+    state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+    setStatus("ready", `已保存 · ${receipt.revision}`);
+  } catch (error) {
+    state.dirty = true;
+    setStatus("error", "保存失败，当前修改仍可恢复", error instanceof Error ? error : new Error(String(error)));
+  } finally {
+    state.saving = false;
+    render();
+  }
+}
+
+async function handleExport() {
+  if (!state.artifact || state.exporting) return;
+  const gate = evaluateComponentExportGate(state.artifact);
+  if (gate.status === "blocked") {
+    const blockedIds = gate.blockedAssets.map((asset) => asset.assetId).join("、");
+    setStatus("error", "PNG 导出已阻止", new Error(`GLB 授权未确认：${blockedIds}`));
+    render();
+    return;
+  }
+  state.exporting = true;
+  setStatus("exporting", "正在生成双 A4 PNG");
+  renderMeta();
+  try {
+    const plan = await createWorkspacePngPlan(state.artifact, {
+      // A dirty draft receives its own content fingerprint; a saved artifact
+      // keeps the revision returned by the JSON save receipt.
+      revision: state.dirty ? undefined : state.revision,
+      catalog: state.catalog?.templates ?? [],
+    });
+    const receipt = await captureWorkspacePng(plan, { capturePng: captureCurrentCanvas });
+    state.lastExport = receipt;
+    setStatus("ready", `PNG 已导出 · ${receipt.widthPx} × ${receipt.heightPx} · ${receipt.revision}`);
+  } catch (error) {
+    setStatus("error", "PNG 导出失败", error instanceof Error ? error : new Error(String(error)));
+  } finally {
+    state.exporting = false;
+    render();
+  }
 }
 
 async function loadUrl(url, fileName = url.split("/").at(-1)) {
@@ -595,6 +738,8 @@ function handleKeyDown(event) {
 els.openButton.addEventListener("click", () => els.fileInput.click());
 els.fileInput.addEventListener("change", () => handleFile(els.fileInput.files?.[0]));
 els.loadGoldenButton.addEventListener("click", () => loadUrl(GOLDEN_CASE_URL, "flovvas-massing.diagram.json"));
+els.saveButton.addEventListener("click", handleSave);
+els.exportButton.addEventListener("click", handleExport);
 els.componentSearch.addEventListener("input", (event) => { state.query = event.target.value; renderComponents(); });
 els.glbImportButton.addEventListener("click", () => els.glbFileInput.click());
 els.glbFileInput.addEventListener("change", () => handleGlbFile(els.glbFileInput.files?.[0]));

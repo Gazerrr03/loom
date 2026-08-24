@@ -1,6 +1,5 @@
 import { assertComposition } from "./composition.mjs";
 import { assertPngCaptureRequest } from "./png-capture.mjs";
-import { assertSceneNode } from "./scene-projection.mjs";
 
 const COMPOSITION_FORMAT = "loom.png.composition";
 const SCHEMA_VERSION = "0.1.0";
@@ -12,6 +11,32 @@ function isRecord(value) {
 
 function clone(value) {
   return structuredClone(value);
+}
+
+// Keep the composition boundary browser-safe. The full scene projection
+// resolver is allowed to use Node-only parameter fingerprinting, but PNG
+// composition only needs this persisted Scene Node shape check.
+function assertSceneNode(sceneNodeValue) {
+  if (!isRecord(sceneNodeValue)) throw new TypeError("Scene Node must be an object");
+  for (const field of ["nodeId", "semanticType", "label", "status", "componentRef"]) {
+    if (typeof sceneNodeValue[field] !== "string" || sceneNodeValue[field].length === 0) {
+      throw new Error(`Scene Node ${field} must be a non-empty string`);
+    }
+  }
+  if (!isRecord(sceneNodeValue.bounds)) throw new Error("Scene Node bounds must be an object");
+  for (const field of ["x", "y", "width", "height"]) {
+    if (typeof sceneNodeValue.bounds[field] !== "number" || !Number.isFinite(sceneNodeValue.bounds[field])) {
+      throw new Error(`Scene Node bounds.${field} must be finite`);
+    }
+  }
+  for (const field of ["elevation", "rotationYDeg", "scale", "zIndex"]) {
+    if (typeof sceneNodeValue[field] !== "number" || !Number.isFinite(sceneNodeValue[field])) {
+      throw new Error(`Scene Node ${field} must be finite`);
+    }
+  }
+  if (!isRecord(sceneNodeValue.parameters)) throw new Error("Scene Node parameters must be an object");
+  if (!Array.isArray(sceneNodeValue.warnings)) throw new Error("Scene Node warnings must be an array");
+  return sceneNodeValue;
 }
 
 function assertStableId(value, path) {

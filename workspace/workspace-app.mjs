@@ -21,6 +21,15 @@ import {
 import { createRouteEditor } from "./route-editor.mjs";
 import { createAnnotationEditor } from "./annotation-editor.mjs";
 import { resolveAnnotationAnchor } from "../contracts/anchors.mjs";
+import {
+  canRedoHistory,
+  canUndoHistory,
+  commitHistoryTransaction,
+  createHistoryStack,
+  redoHistoryStack,
+  replaceHistoryPresent,
+  undoHistoryStack,
+} from "./history-stack.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 const GOLDEN_CASE_URL = "../examples/flovvas-massing.diagram.json";
@@ -78,12 +87,15 @@ const state = {
   exporting: false,
   lastExport: null,
   transformSequence: 0,
+  componentSequence: 0,
   viewController: createWorkspaceView(),
   viewPointer: null,
   routeEditor: null,
   activeRoutePointerId: null,
   annotationEditor: null,
   suppressAnnotationCommit: false,
+  history: null,
+  savedFingerprint: null,
 };
 
 els.canvas.style.touchAction = "none";
@@ -251,6 +263,33 @@ function refreshArtifactControllers() {
   state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
   state.routeEditor = createRouteEditor({ artifact: state.artifact, revision: state.revision });
   state.annotationEditor = createAnnotationEditor({ artifact: state.artifact, revision: state.revision });
+}
+
+function artifactFingerprint(artifact) {
+  return JSON.stringify(artifact);
+}
+
+function syncDirtyFromHistory() {
+  state.dirty = state.savedFingerprint === null || artifactFingerprint(state.artifact) !== state.savedFingerprint;
+}
+
+function reconcileSelection() {
+  if (state.selectedId && !state.artifact.semantic.nodes.some((node) => node.id === state.selectedId)) state.selectedId = null;
+  if (state.selectedEdgeId && !state.artifact.semantic.edges.some((edge) => edge.id === state.selectedEdgeId)) state.selectedEdgeId = null;
+  if (state.selectedAnnotationId && !state.artifact.annotations.some((annotation) => annotation.id === state.selectedAnnotationId)) state.selectedAnnotationId = null;
+}
+
+function commitArtifactHistory(artifact, { transactionId, kind = "workspace.edit", message = "已提交 Workspace 修改" } = {}) {
+  if (!state.history) throw new Error("Workspace history is unavailable");
+  const nextHistory = commitHistoryTransaction(state.history, artifact, { transactionId, kind });
+  state.history = nextHistory;
+  state.artifact = clone(nextHistory.present);
+  state.previewArtifact = null;
+  reconcileSelection();
+  syncDirtyFromHistory();
+  refreshArtifactControllers();
+  setStatus(state.dirty ? "dirty" : "ready", message);
+  return nextHistory;
 }
 
 function project(point) {
@@ -536,6 +575,11 @@ function nextTransformGesture(operation) {
   return `workspace-transform-${operation.toLocaleLowerCase()}-${state.transformSequence}`;
 }
 
+function nextComponentGesture(operation = "replace") {
+  state.componentSequence += 1;
+  return `workspace-component-${operation.toLocaleLowerCase()}-${state.componentSequence}`;
+}
+
 function transformOptions(operation, rawValue) {
   return {
     baseRevision: state.revision,
@@ -564,11 +608,11 @@ function commitInspectorField(operation, rawValue) {
   if (!state.artifact || !state.selectedId || state.activePointerId !== null) return;
   try {
     const result = commitInspectorTransform(state.artifact, transformOptions(operation, rawValue));
-    state.artifact = result.artifact;
-    state.previewArtifact = null;
-    state.dirty = true;
-    refreshArtifactControllers();
-    setStatus("dirty", `已提交 ${result.command.type} · 1 个字段级 Human Override`);
+    commitArtifactHistory(result.artifact, {
+      transactionId: result.command.gestureId,
+      kind: result.command.type,
+      message: `已提交 ${result.command.type} · 1 个字段级 Human Override`,
+    });
     render();
   } catch (error) {
     state.previewArtifact = null;
@@ -577,13 +621,9 @@ function commitInspectorField(operation, rawValue) {
   }
 }
 
-function applyComponentArtifact(artifact, message) {
-  state.artifact = clone(artifact);
-  state.previewArtifact = null;
-  refreshArtifactControllers();
-  state.dirty = true;
+function applyComponentArtifact(artifact, message, { transactionId = nextComponentGesture(), kind = "semantic.node.update" } = {}) {
+  commitArtifactHistory(artifact, { transactionId, kind, message });
   state.componentError = null;
-  setStatus("dirty", message);
   render();
 }
 
@@ -602,7 +642,10 @@ function handleComponentEntry(entry) {
     const replacement = entry.kind === "asset"
       ? replaceNodeComponent(state.artifact, { nodeId: state.selectedId, assetId: entry.id })
       : replaceNodeComponent(state.artifact, { nodeId: state.selectedId, componentRef: entry.id });
-    applyComponentArtifact(replacement.artifact, entry.kind === "asset" ? "已绑定 GLB 引用 · 导出仍被授权门禁阻止" : `已将 ${state.selectedId} 替换为 ${entry.name}`);
+    applyComponentArtifact(replacement.artifact, entry.kind === "asset" ? "已绑定 GLB 引用 · 导出仍被授权门禁阻止" : `已将 ${state.selectedId} 替换为 ${entry.name}`, {
+      transactionId: nextComponentGesture(entry.kind === "asset" ? "asset" : "replace"),
+      kind: replacement.command.type,
+    });
   } catch (error) {
     state.componentError = error instanceof Error ? error.message : String(error);
     setStatus("error", "组件替换失败", error instanceof Error ? error : new Error(String(error)));
@@ -850,6 +893,8 @@ function renderMeta() {
   }
   const gate = state.artifact ? evaluateComponentExportGate(state.artifact) : { status: "blocked" };
   els.saveButton.disabled = !state.artifact || !state.dirty || state.saving;
+  els.undoButton.disabled = !state.history || !canUndoHistory(state.history);
+  els.redoButton.disabled = !state.history || !canRedoHistory(state.history);
   els.exportButton.disabled = !state.artifact || gate.status === "blocked" || state.exporting;
 }
 
@@ -870,6 +915,8 @@ function setArtifact(artifact, fileName = "diagram.json") {
   state.selectedAnnotationId = null;
   state.dirty = false;
   state.previewArtifact = null;
+  state.history = createHistoryStack(state.artifact);
+  state.savedFingerprint = artifactFingerprint(state.artifact);
   refreshArtifactControllers();
   state.activePointerId = null;
   state.activeRoutePointerId = null;
@@ -897,7 +944,9 @@ async function handleSave() {
     state.artifact = clone(receipt.artifact);
     state.fileName = receipt.fileName;
     state.revision = receipt.revision;
+    state.history = replaceHistoryPresent(state.history, receipt.artifact);
     state.dirty = false;
+    state.savedFingerprint = artifactFingerprint(receipt.artifact);
     state.previewArtifact = null;
     refreshArtifactControllers();
     setStatus("ready", `已保存 · ${receipt.revision}`);
@@ -908,6 +957,54 @@ async function handleSave() {
     state.saving = false;
     render();
   }
+}
+
+function applyHistoryNavigation(nextHistory, action) {
+  state.history = nextHistory;
+  state.artifact = clone(nextHistory.present);
+  state.previewArtifact = null;
+  reconcileSelection();
+  syncDirtyFromHistory();
+  refreshArtifactControllers();
+  const event = nextHistory.lastEvent;
+  const suffix = event?.transactionId ? ` · ${event.transactionId}` : "";
+  setStatus(state.dirty ? "dirty" : "ready", `${action}${suffix}`);
+  render();
+}
+
+function cancelActivePreview() {
+  if (state.canvasController?.getState().active) state.canvasController.cancel();
+  if (state.routeEditor?.getState().active) state.routeEditor.cancel();
+  if (state.annotationEditor?.getState().active) state.annotationEditor.cancel();
+  state.previewArtifact = null;
+  state.activePointerId = null;
+  state.activeRoutePointerId = null;
+  state.dragging = false;
+  state.moved = false;
+}
+
+function handleUndo() {
+  if (!state.history) return;
+  cancelActivePreview();
+  const next = undoHistoryStack(state.history);
+  if (next.lastEvent.type === "undo-empty") {
+    setStatus(state.dirty ? "dirty" : "ready", "没有可撤销的 Workspace 修改");
+    renderMeta();
+    return;
+  }
+  applyHistoryNavigation(next, "已 Undo");
+}
+
+function handleRedo() {
+  if (!state.history) return;
+  cancelActivePreview();
+  const next = redoHistoryStack(state.history);
+  if (next.lastEvent.type === "redo-empty") {
+    setStatus(state.dirty ? "dirty" : "ready", "没有可重做的 Workspace 修改");
+    renderMeta();
+    return;
+  }
+  applyHistoryNavigation(next, "已 Redo");
 }
 
 async function handleExport() {
@@ -954,6 +1051,8 @@ async function loadUrl(url, fileName = url.split("/").at(-1)) {
     state.selectedEdgeId = null;
     state.selectedAnnotationId = null;
     state.previewArtifact = null;
+    state.history = null;
+    state.savedFingerprint = null;
     state.canvasController = null;
     state.routeEditor = null;
     state.annotationEditor = null;
@@ -1018,12 +1117,11 @@ function commitAnnotationPatch(patch) {
   try {
     const result = state.annotationEditor.commit({ patch });
     if (!result.command) return;
-    state.artifact = result.artifact;
-    state.previewArtifact = null;
-    state.dirty = true;
-    state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
-    state.routeEditor = createRouteEditor({ artifact: state.artifact, revision: state.revision });
-    setStatus("dirty", "已提交 1 个 annotation.update Human Override");
+    commitArtifactHistory(result.artifact, {
+      transactionId: result.command.gestureId,
+      kind: result.command.type,
+      message: "已提交 1 个 annotation.update Human Override",
+    });
     render();
   } catch (error) {
     state.previewArtifact = null;
@@ -1058,6 +1156,8 @@ function handleFile(file) {
     catch (error) {
       state.artifact = null;
       state.previewArtifact = null;
+      state.history = null;
+      state.savedFingerprint = null;
       state.canvasController = null;
       state.routeEditor = null;
       state.annotationEditor = null;
@@ -1072,6 +1172,8 @@ function handleFile(file) {
   reader.addEventListener("error", () => {
     state.artifact = null;
     state.previewArtifact = null;
+    state.history = null;
+    state.savedFingerprint = null;
     state.canvasController = null;
     state.routeEditor = null;
     state.annotationEditor = null;
@@ -1106,7 +1208,10 @@ function handleGlbFile(file) {
       fileName: file.name,
       uri: file.webkitRelativePath || file.name,
     });
-    applyComponentArtifact(result.artifact, `已导入 ${result.asset.id} · 只保存引用，授权未确认`);
+    applyComponentArtifact(result.artifact, `已导入 ${result.asset.id} · 只保存引用，授权未确认`, {
+      transactionId: nextComponentGesture("import"),
+      kind: "component.asset.import",
+    });
   } catch (error) {
     state.componentError = error instanceof Error ? error.message : String(error);
     setStatus("error", "GLB 导入失败", error instanceof Error ? error : new Error(String(error)));
@@ -1295,12 +1400,11 @@ function finishPointer(event, cancelled = false) {
         ? state.routeEditor.cancel()
         : state.routeEditor.pointerUp({ diagramPoint: state.moved ? routePointFromEvent(event) : undefined });
       if (result.command) {
-        state.artifact = result.artifact;
-        state.dirty = true;
-        state.previewArtifact = null;
-        state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
-        state.annotationEditor = createAnnotationEditor({ artifact: state.artifact, revision: state.revision });
-        setStatus("dirty", "已提交 1 个路线字段级 Human Override");
+        commitArtifactHistory(result.artifact, {
+          transactionId: result.command.gestureId,
+          kind: result.command.type,
+          message: "已提交 1 个路线字段级 Human Override",
+        });
       } else {
         state.previewArtifact = null;
         setStatus("ready", cancelled ? "已取消路线预览" : "未移动 · 未提交路线修改");
@@ -1327,11 +1431,11 @@ function finishPointer(event, cancelled = false) {
       diagramPoint: state.moved && active ? diagramPointFromEvent(event, active.nodeId) : undefined,
     });
     if (result.command) {
-      state.artifact = result.artifact;
-      state.dirty = true;
-      state.previewArtifact = null;
-      refreshArtifactControllers();
-      setStatus("dirty", "已提交 1 个字段级 Human Override");
+      commitArtifactHistory(result.artifact, {
+        transactionId: result.command.gestureId,
+        kind: result.command.type,
+        message: "已提交 1 个字段级 Human Override",
+      });
     } else {
       state.previewArtifact = null;
       setStatus("ready", cancelled ? "已取消拖动预览" : "未移动 · 未提交修改");
@@ -1407,6 +1511,8 @@ els.openButton.addEventListener("click", () => els.fileInput.click());
 els.fileInput.addEventListener("change", () => handleFile(els.fileInput.files?.[0]));
 els.loadGoldenButton.addEventListener("click", () => loadUrl(GOLDEN_CASE_URL, "flovvas-massing.diagram.json"));
 els.saveButton.addEventListener("click", handleSave);
+els.undoButton.addEventListener("click", handleUndo);
+els.redoButton.addEventListener("click", handleRedo);
 els.exportButton.addEventListener("click", handleExport);
 els.componentSearch.addEventListener("input", (event) => { state.query = event.target.value; renderComponents(); });
 els.glbImportButton.addEventListener("click", () => els.glbFileInput.click());
@@ -1442,6 +1548,7 @@ window.LoomWorkspace = Object.freeze({
   getCanvasState: () => state.canvasController?.getState() ?? null,
   getRouteState: () => state.routeEditor?.getState() ?? null,
   getAnnotationState: () => state.annotationEditor?.getState() ?? null,
+  getHistoryState: () => state.history ? clone(state.history) : null,
   getViewState: () => state.viewController.getState(),
   loadArtifact: (artifact, fileName) => setArtifact(artifact, fileName),
   loadUrl,

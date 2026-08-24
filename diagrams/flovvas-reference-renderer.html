@@ -1,0 +1,391 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Loom · Flovvas Reference Renderer</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #24303b;
+      --muted: #69747e;
+      --line: #d9d3c8;
+      --paper: #f7f4ee;
+      --panel: #fffdf9;
+      --accent: #c66a43;
+      --green: #4f8a73;
+      --violet: #7467a8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 28px;
+      color: var(--ink);
+      background: #e8e4dd;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    }
+    .shell { max-width: 1240px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; margin-bottom: 18px; }
+    .eyebrow { margin: 0 0 8px; color: var(--accent); font: 600 11px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { margin: 0; font: 650 clamp(22px, 3vw, 34px)/1.1 Georgia, "Songti SC", serif; letter-spacing: -.025em; }
+    .intro { max-width: 720px; margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    button { border: 1px solid #cfc7bb; border-radius: 999px; padding: 9px 13px; color: var(--ink); background: var(--panel); cursor: pointer; font: 600 12px/1 ui-sans-serif, system-ui, sans-serif; }
+    button:hover { border-color: var(--accent); color: var(--accent); }
+    .frame { overflow: hidden; border: 1px solid #cec7bc; border-radius: 18px; background: var(--panel); box-shadow: 0 24px 60px rgba(67, 55, 39, .13); }
+    .frame-top { display: flex; justify-content: space-between; gap: 20px; padding: 14px 18px; border-bottom: 1px solid var(--line); color: var(--muted); font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .status { display: inline-flex; align-items: center; gap: 7px; }
+    .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .stage { padding: 12px; background: #fbfaf7; }
+    svg { display: block; width: 100%; height: auto; border: 1px solid #e2ddd4; background: #f8f6f1; }
+    .legend { display: flex; gap: 14px; flex-wrap: wrap; padding: 14px 18px 2px; color: var(--muted); font-size: 11px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 18px; height: 8px; border-radius: 999px; background: #6687a4; }
+    .swatch.alt { background: repeating-linear-gradient(90deg, #9b9a95 0 5px, transparent 5px 8px); border: 1px solid #9b9a95; }
+    .swatch.input { background: #c66a43; }
+    .swatch.loop { background: #7467a8; }
+    .notes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; padding: 16px 18px 18px; }
+    .note { padding: 12px 13px; border: 1px solid var(--line); border-radius: 10px; background: #fffefa; }
+    .note strong { display: block; margin-bottom: 5px; font-size: 12px; }
+    .note p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+    .footer { margin-top: 13px; color: #77736b; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    @media (max-width: 800px) { body { padding: 14px; } header { display: block; } .actions { margin-top: 14px; justify-content: flex-start; } .notes { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <p class="eyebrow">M4 · Reference Renderer · Golden Case</p>
+        <h1>From conversation to a compounding workspace</h1>
+        <p class="intro">这是 Loom 的第一个可评审视觉纵切：同一份 <code>diagram.json</code> 被投影为七个有自身构造逻辑的等轴阶段、方格路线层和标注层。它验证“有限参数化原语能否承载语义”，不把 Renderer 私有状态写回正式资产。</p>
+      </div>
+      <div class="actions" aria-label="预览操作">
+        <button id="reset-view" type="button">重置视图</button>
+        <button id="download-svg" type="button">下载 SVG 评审稿</button>
+      </div>
+    </header>
+
+    <section class="frame" aria-labelledby="renderer-title">
+      <div class="frame-top">
+        <span id="renderer-title">REFERENCE / FL 0.1 / ORTHOGRAPHIC ISOMETRIC</span>
+        <span class="status" id="source-status">正在读取 Golden Case…</span>
+      </div>
+      <div class="stage">
+        <svg id="reference-scene" viewBox="0 0 1100 700" role="img" aria-labelledby="scene-title scene-description">
+          <title id="scene-title">Flovvas Golden Case 等轴流程图</title>
+          <desc id="scene-description">七个产品阶段沿左下到右上方向排列，模型由不同构造原语组成，路线沿等轴方格边延伸，阶段区和标注共同组成一张作品集分析图。</desc>
+          <defs>
+            <marker id="arrow-main" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0 0 L9 3.5 L0 7 Z" fill="#4f718b"/></marker>
+            <marker id="arrow-alt" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0 0 L9 3.5 L0 7 Z" fill="#9b9a95"/></marker>
+            <marker id="arrow-input" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0 0 L9 3.5 L0 7 Z" fill="#c66a43"/></marker>
+            <marker id="arrow-loop" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0 0 L9 3.5 L0 7 Z" fill="#7467a8"/></marker>
+            <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#51473a" flood-opacity=".16"/></filter>
+          </defs>
+          <g id="scene"></g>
+        </svg>
+        <div class="legend" aria-label="图例">
+          <span><i class="swatch"></i>主路径</span>
+          <span><i class="swatch alt"></i>替代路径</span>
+          <span><i class="swatch input"></i>外部输入</span>
+          <span><i class="swatch loop"></i>复利回路</span>
+          <span>虚线框 = phase zone</span>
+          <span>阴影带 = A4 gutter</span>
+        </div>
+      </div>
+      <div class="notes">
+        <article class="note"><strong>七个阶段仍可区分</strong><p>LINE、BRANCH、CARD、FIELD、ARCHIVE、CONTEXT、WORKBENCH 分别使用薄片、分支、卡片、网格、层架、叠层和开放工作台原语，颜色只作辅助。</p></article>
+        <article class="note"><strong>路径服从方格</strong><p>底图显示等轴方格；路线只能沿两个网格方向折行，主路径仍由左下向右上阅读。</p></article>
+        <article class="note"><strong>Renderer 不拥有事实</strong><p>页面可以重新加载 JSON；节点、路线和标注都是 RenderDocument 的派生投影，编辑态控件不进入正式画面。</p></article>
+      </div>
+    </section>
+    <p class="footer">Source: examples/flovvas-massing.diagram.json · fallback snapshot 仅用于 file:// 本地预览 · PNG export 由后续 M7 负责</p>
+  </main>
+
+  <script>
+    const FALLBACK_GOLDEN_CASE = {
+      id: "flovvas-massing-golden-case",
+      composition: { unit: "mm", canvas: { width: 594, height: 210 }, pages: [{ id: "page-left", bounds: { x: 0, y: 0, width: 297, height: 210 } }, { id: "page-right", bounds: { x: 297, y: 0, width: 297, height: 210 } }], safeAreas: [{ id: "safe-gutter", kind: "gutter", bounds: { x: 291, y: 0, width: 12, height: 210 } }] },
+      semantic: {
+        nodes: [
+          ["stage-line", "LINE", "main-stage", "conversation"], ["stage-branch", "BRANCH", "main-stage", "exploration"], ["stage-card", "CARD", "main-stage", "exploration"], ["stage-field", "FIELD", "main-stage", "structure"], ["stage-archive", "ARCHIVE", "main-stage", "knowledge"], ["stage-context", "CONTEXT", "main-stage", "knowledge"], ["stage-workbench", "WORKBENCH", "main-stage", "workspace"],
+          ["alt-chat-only", "Chat-only", "alternative", "conversation"], ["alt-board-only", "Board-only", "alternative", "structure"], ["alt-storage-only", "Storage-only", "alternative", "knowledge"], ["input-human-intent", "Human intent", "external-input", "conversation"], ["input-agent-output", "Agent output", "external-input", "exploration"], ["input-files", "Files", "external-input", "structure"], ["input-links", "Links", "external-input", "knowledge"], ["input-prior-context", "Prior context", "external-input", "knowledge"]
+        ].map(([id, label, visualRole, phase], index) => ({ id, label, type: visualRole === "main-stage" ? "product-stage" : visualRole === "alternative" ? "alternative-path" : "external-input", visualRole, phase, properties: { sequence: index + 1 } })),
+        edges: [
+          ["edge-split", "stage-line", "stage-branch", "SPLIT", "main-flow"], ["edge-extract", "stage-branch", "stage-card", "EXTRACT", "main-flow"], ["edge-connect", "stage-card", "stage-field", "CONNECT", "main-flow"], ["edge-store", "stage-field", "stage-archive", "STORE", "main-flow"], ["edge-layer", "stage-archive", "stage-context", "LAYER", "main-flow"], ["edge-recombine", "stage-context", "stage-workbench", "RECOMBINE", "main-flow"], ["edge-alt-chat", "stage-line", "alt-chat-only", "", "alternative"], ["edge-alt-board", "stage-field", "alt-board-only", "", "alternative"], ["edge-alt-storage", "stage-archive", "alt-storage-only", "", "alternative"], ["edge-input-intent", "input-human-intent", "stage-line", "", "external-input"], ["edge-input-agent", "input-agent-output", "stage-card", "", "external-input"], ["edge-input-files", "input-files", "stage-field", "", "external-input"], ["edge-input-links", "input-links", "stage-archive", "", "external-input"], ["edge-input-context", "input-prior-context", "stage-context", "", "external-input"], ["edge-compound", "stage-workbench", "stage-context", "COMPOUND", "compounding-loop"]
+        ].map(([id, source, target, label, visualRole]) => ({ id, source, target, label, type: visualRole === "main-flow" ? "transformation" : visualRole, visualRole })),
+        groups: [
+          ["phase-conversation", "Conversation", ["stage-line", "input-human-intent", "alt-chat-only"]], ["phase-exploration", "Exploration", ["stage-branch", "stage-card", "input-agent-output"]], ["phase-structure", "Structure", ["stage-field", "input-files", "alt-board-only"]], ["phase-knowledge-workspace", "Knowledge → Workspace", ["stage-archive", "stage-context", "stage-workbench", "input-links", "input-prior-context", "alt-storage-only"]]
+        ].map(([id, label, children]) => ({ id, label, children, visualRole: "phase-zone" }))
+      },
+      layout: {
+        generated: {
+          nodes: {
+            "stage-line": { x: 70, y: 165, width: 52, height: 26, elevation: 4, scale: 1, zIndex: 10 }, "stage-branch": { x: 145, y: 140, width: 62, height: 34, elevation: 8, scale: 1, zIndex: 20 }, "stage-card": { x: 220, y: 118, width: 44, height: 34, elevation: 12, scale: 1, zIndex: 30 }, "stage-field": { x: 280, y: 98, width: 78, height: 48, elevation: 8, scale: 1, zIndex: 40 }, "stage-archive": { x: 365, y: 77, width: 58, height: 48, elevation: 14, scale: 1, zIndex: 50 }, "stage-context": { x: 445, y: 55, width: 64, height: 50, elevation: 18, scale: 1, zIndex: 60 }, "stage-workbench": { x: 525, y: 35, width: 82, height: 58, elevation: 10, scale: 1, zIndex: 70 },
+            "alt-chat-only": { x: 65, y: 105, width: 38, height: 22, elevation: 2, scale: .8, zIndex: 5 }, "alt-board-only": { x: 285, y: 165, width: 42, height: 24, elevation: 2, scale: .8, zIndex: 5 }, "alt-storage-only": { x: 390, y: 145, width: 42, height: 24, elevation: 2, scale: .8, zIndex: 5 }, "input-human-intent": { x: 24, y: 184, width: 24, height: 16, elevation: 0, scale: .7, zIndex: 1 }, "input-agent-output": { x: 170, y: 188, width: 24, height: 16, elevation: 0, scale: .7, zIndex: 1 }, "input-files": { x: 245, y: 188, width: 24, height: 16, elevation: 0, scale: .7, zIndex: 1 }, "input-links": { x: 342, y: 178, width: 24, height: 16, elevation: 0, scale: .7, zIndex: 1 }, "input-prior-context": { x: 450, y: 150, width: 24, height: 16, elevation: 0, scale: .7, zIndex: 1 }
+          },
+          routes: {
+            "edge-split": { points: [{ x: 96, y: 152 }, { x: 120, y: 152 }, { x: 120, y: 140 }, { x: 145, y: 140 }] }, "edge-extract": { points: [{ x: 176, y: 123 }, { x: 198, y: 123 }, { x: 198, y: 118 }, { x: 220, y: 118 }] }, "edge-connect": { points: [{ x: 242, y: 105 }, { x: 260, y: 105 }, { x: 260, y: 98 }, { x: 280, y: 98 }] }, "edge-store": { points: [{ x: 319, y: 82 }, { x: 342, y: 82 }, { x: 342, y: 77 }, { x: 365, y: 77 }] }, "edge-layer": { points: [{ x: 394, y: 61 }, { x: 420, y: 61 }, { x: 420, y: 55 }, { x: 445, y: 55 }] }, "edge-recombine": { points: [{ x: 477, y: 38 }, { x: 500, y: 38 }, { x: 500, y: 35 }, { x: 525, y: 35 }] }, "edge-alt-chat": { points: [{ x: 70, y: 150 }, { x: 70, y: 130 }, { x: 65, y: 130 }, { x: 65, y: 105 }] }, "edge-alt-board": { points: [{ x: 285, y: 120 }, { x: 305, y: 120 }, { x: 305, y: 165 }, { x: 285, y: 165 }] }, "edge-alt-storage": { points: [{ x: 365, y: 100 }, { x: 385, y: 100 }, { x: 385, y: 145 }, { x: 390, y: 145 }] }, "edge-input-intent": { points: [{ x: 36, y: 184 }, { x: 50, y: 184 }, { x: 50, y: 165 }, { x: 70, y: 165 }] }, "edge-input-agent": { points: [{ x: 182, y: 188 }, { x: 200, y: 188 }, { x: 200, y: 118 }, { x: 220, y: 118 }] }, "edge-input-files": { points: [{ x: 257, y: 188 }, { x: 270, y: 188 }, { x: 270, y: 98 }, { x: 280, y: 98 }] }, "edge-input-links": { points: [{ x: 354, y: 178 }, { x: 360, y: 178 }, { x: 360, y: 77 }, { x: 365, y: 77 }] }, "edge-input-context": { points: [{ x: 462, y: 150 }, { x: 470, y: 150 }, { x: 470, y: 55 }, { x: 445, y: 55 }] }, "edge-compound": { points: [{ x: 555, y: 65 }, { x: 575, y: 65 }, { x: 575, y: 125 }, { x: 445, y: 125 }, { x: 445, y: 80 }] }
+          },
+          groups: { "phase-conversation": { bounds: { x: 18, y: 92, width: 105, height: 108 } }, "phase-exploration": { bounds: { x: 124, y: 91, width: 140, height: 109 } }, "phase-structure": { bounds: { x: 268, y: 76, width: 78, height: 124 } }, "phase-knowledge-workspace": { bounds: { x: 348, y: 18, width: 228, height: 177 } } }
+        },
+        overrides: { nodes: { "stage-workbench": { x: 522, rotationYDeg: -4 } }, routes: {}, groups: {}, view: {} }
+      },
+      annotations: [
+        { id: "annotation-thesis", text: "From conversation to a compounding workspace", anchor: { kind: "canvas", position: { x: 22, y: 24 } }, visualRole: "title" }, { id: "annotation-field", text: "Connections make relationships inspectable", anchor: { kind: "node", targetId: "stage-field", offset: { x: 0, y: -18 } }, visualRole: "stage-note" }, { id: "annotation-gutter", text: "Keep the main transition legible across the spread", anchor: { kind: "edge", targetId: "edge-connect", offset: { x: 8, y: -8 } }, visualRole: "editorial-note" }, { id: "annotation-loop", text: "Stored context improves the next cycle", anchor: { kind: "edge", targetId: "edge-compound", offset: { x: 0, y: -10 } }, visualRole: "loop-note" }
+      ]
+    };
+
+    const STAGE_COLORS = ["#6687a4", "#7a9b91", "#ad8c69", "#8b7baa", "#b27668", "#738e87", "#c17a4e"];
+    const GRID_STEP = 20;
+    const scene = document.getElementById("scene");
+    const sourceStatus = document.getElementById("source-status");
+    let currentDiagram = null;
+
+    function effectiveLayout(diagram) {
+      const source = diagram.layout || {};
+      const generated = source.generated || { nodes: {}, routes: {}, groups: {} };
+      const overrides = source.overrides || { nodes: {}, routes: {}, groups: {}, view: {} };
+      const merge = (kind) => Object.fromEntries(Object.entries(generated[kind] || {}).map(([id, value]) => [id, { ...value, ...(overrides[kind]?.[id] || {}) }]));
+      return { nodes: merge("nodes"), routes: merge("routes"), groups: merge("groups"), view: { ...(diagram.composition?.defaultView || {}), ...(overrides.view || {}) } };
+    }
+
+    function project(point) {
+      const { x, y } = point;
+      const z = point.z ?? point.elevation ?? 0;
+      return { x: 82 + x * 1.42 + y * .56, y: 568 + y * .66 - x * .2 - z * 1.7 };
+    }
+    function pointsString(points) { return points.map((point) => { const p = project(point); return `${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(" "); }
+    function rectPoints(rect) { return pointsString([{ x: rect.x, y: rect.y }, { x: rect.x + rect.width, y: rect.y }, { x: rect.x + rect.width, y: rect.y + rect.height }, { x: rect.x, y: rect.y + rect.height }]); }
+    function midpoint(points) { let total = 0; const lengths = []; for (let i = 1; i < points.length; i += 1) { const length = Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y); lengths.push(length); total += length; } let walked = 0; const target = total / 2; for (let i = 1; i < points.length; i += 1) { const length = lengths[i - 1]; if (walked + length >= target) { const ratio = length ? (target - walked) / length : 0; return { x: points[i - 1].x + (points[i].x - points[i - 1].x) * ratio, y: points[i - 1].y + (points[i].y - points[i - 1].y) * ratio }; } walked += length; } return points[points.length - 1]; }
+    function text(x, y, value, size = 11, fill = "#24303b", weight = 500, anchor = "middle") { return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" fill="${fill}" font-family="Inter, sans-serif" font-size="${size}" font-weight="${weight}">${String(value).replace(/[&<>]/g, (match) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[match]))}</text>`; }
+    function nodeCenter(layout) { const p = project({ x: layout.x + layout.width / 2, y: layout.y + layout.height / 2, elevation: layout.elevation || 0 }); return p; }
+
+    function mixColor(from, to, amount) {
+      const parse = (value) => value.match(/[0-9a-f]{2}/gi).map((part) => Number.parseInt(part, 16));
+      const a = parse(from);
+      const b = parse(to);
+      return `#${a.map((channel, index) => Math.round(channel + (b[index] - channel) * amount).toString(16).padStart(2, "0")).join("")}`;
+    }
+
+    function faceTones(color) {
+      return {
+        top: mixColor(color, "#f0dfc5", .16),
+        front: mixColor(color, "#28343a", .34),
+        side: mixColor(color, "#1c272d", .52),
+        edge: mixColor(color, "#1d2a31", .64)
+      };
+    }
+
+    function surfacePoints(rect, z = 0) {
+      return [
+        project({ x: rect.x, y: rect.y, z }),
+        project({ x: rect.x + rect.width, y: rect.y, z }),
+        project({ x: rect.x + rect.width, y: rect.y + rect.height, z }),
+        project({ x: rect.x, y: rect.y + rect.height, z })
+      ];
+    }
+
+    function polygon(points, fill, stroke = "none", strokeWidth = 0) {
+      return `<polygon points="${points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ")}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}"/>`;
+    }
+
+    function extrudedRect(rect, baseZ, height, tones) {
+      const base = surfacePoints(rect, baseZ);
+      const top = surfacePoints(rect, baseZ + height);
+      return [
+        polygon([top[3], top[2], base[2], base[3]], tones.front, tones.edge, .55),
+        polygon([top[1], top[2], base[2], base[1]], tones.side, tones.edge, .55),
+        polygon(top, tones.top, tones.edge, .75)
+      ].join("");
+    }
+
+    function topOutline(rect, z, color, dash = "") {
+      const top = surfacePoints(rect, z);
+      const points = [...top, top[0]];
+      return `<polyline points="${points.map((point) => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(" ")}" fill="none" stroke="${color}" stroke-width=".8"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`;
+    }
+
+    function renderStageGeometry(node, layout, stageIndex) {
+      const scale = layout.scale || 1;
+      const rect = { x: layout.x, y: layout.y, width: layout.width * scale, height: layout.height * scale };
+      const baseZ = layout.elevation || 0;
+      const color = node.visualRole === "main-stage" ? STAGE_COLORS[stageIndex % STAGE_COLORS.length] : node.visualRole === "alternative" ? "#aaa49a" : "#c66a43";
+      const tones = faceTones(color);
+      const pieces = [];
+      let labelZ = baseZ + 5;
+
+      if (node.label === "LINE") {
+        const platform = { x: rect.x + 4, y: rect.y + rect.height * .27, width: rect.width - 8, height: rect.height * .46 };
+        pieces.push(extrudedRect(platform, baseZ, 2.5, tones));
+        const count = node.properties?.cardCount || 6;
+        const gap = 1.6;
+        const tileWidth = (platform.width - 7 - gap * (count - 1)) / count;
+        for (let index = 0; index < count; index += 1) {
+          const tile = { x: platform.x + 3.5 + index * (tileWidth + gap), y: platform.y + 2.2, width: tileWidth, height: platform.height - 4.4 };
+          pieces.push(extrudedRect(tile, baseZ + 2.5, 3.4 + (index % 2) * 1.2, faceTones(mixColor(color, "#ead4b5", index / Math.max(1, count) * .22))));
+        }
+        labelZ = baseZ + 7;
+      } else if (node.label === "BRANCH") {
+        const platform = { x: rect.x + 5, y: rect.y + rect.height * .33, width: rect.width - 10, height: rect.height * .34 };
+        pieces.push(extrudedRect(platform, baseZ, 2.5, tones));
+        const branchCount = node.properties?.branchCount || 3;
+        const spine = { x: rect.x + rect.width * .12, y: rect.y + rect.height * .47, width: rect.width * .72, height: 3.5 };
+        pieces.push(extrudedRect(spine, baseZ + 2.5, 3.2, tones));
+        for (let index = 0; index < branchCount; index += 1) {
+          const branch = { x: rect.x + rect.width * (.17 + index * .23), y: rect.y + rect.height * .12, width: 4.5, height: rect.height * .72 };
+          pieces.push(extrudedRect(branch, baseZ + 2.5, 6.5 + index * .8, faceTones(mixColor(color, "#f2d7ae", index / Math.max(1, branchCount) * .18))));
+        }
+        labelZ = baseZ + 10;
+      } else if (node.label === "CARD") {
+        const plinth = { x: rect.x + 5, y: rect.y + 5, width: rect.width - 10, height: rect.height - 10 };
+        pieces.push(extrudedRect(plinth, baseZ, 2.2, tones));
+        const card = { x: rect.x + 9, y: rect.y + 7, width: rect.width - 18, height: rect.height - 13 };
+        pieces.push(extrudedRect(card, baseZ + 2.2, 7.5, faceTones(mixColor(color, "#f1d7b1", .18))));
+        pieces.push(topOutline({ x: card.x + 4, y: card.y + 4, width: card.width - 8, height: card.height - 8 }, baseZ + 10, tones.edge, "2 2"));
+        const fold = surfacePoints(card, baseZ + 10);
+        pieces.push(`<line x1="${fold[0].x.toFixed(1)}" y1="${fold[0].y.toFixed(1)}" x2="${fold[2].x.toFixed(1)}" y2="${fold[2].y.toFixed(1)}" stroke="${tones.edge}" stroke-width=".7" opacity=".72"/>`);
+        labelZ = baseZ + 10;
+      } else if (node.label === "FIELD") {
+        const platform = { x: rect.x + 3, y: rect.y + 3, width: rect.width - 6, height: rect.height - 6 };
+        pieces.push(extrudedRect(platform, baseZ, 2.2, tones));
+        const columns = node.properties?.columns || 4;
+        const rows = node.properties?.rows || 3;
+        const gap = 2.5;
+        const tileWidth = (platform.width - gap * (columns + 1)) / columns;
+        const tileHeight = (platform.height - gap * (rows + 1)) / rows;
+        for (let row = 0; row < rows; row += 1) {
+          for (let column = 0; column < columns; column += 1) {
+            const tile = { x: platform.x + gap + column * (tileWidth + gap), y: platform.y + gap + row * (tileHeight + gap), width: tileWidth, height: tileHeight };
+            pieces.push(extrudedRect(tile, baseZ + 2.2, 2.2 + ((row + column) % 2) * 1.2, faceTones((row + column) % 2 ? mixColor(color, "#f0d5af", .13) : color)));
+          }
+        }
+        labelZ = baseZ + 6;
+      } else if (node.label === "ARCHIVE") {
+        const base = { x: rect.x + 5, y: rect.y + rect.height * .62, width: rect.width - 10, height: rect.height * .22 };
+        pieces.push(extrudedRect(base, baseZ, 2.2, tones));
+        const levels = node.properties?.levels || 4;
+        const spine = { x: rect.x + rect.width * .46, y: rect.y + rect.height * .14, width: 4.5, height: rect.height * .7 };
+        pieces.push(extrudedRect(spine, baseZ + 2.2, 15, tones));
+        for (let level = 0; level < levels; level += 1) {
+          const shelf = { x: rect.x + 3 + level * 1.2, y: rect.y + rect.height * (.12 + level * .16), width: rect.width - 6 - level * 2.4, height: 4.5 };
+          pieces.push(extrudedRect(shelf, baseZ + 3.2 + level * 5.4, 2.1, faceTones(mixColor(color, "#f0d4ae", level / Math.max(1, levels) * .18))));
+        }
+        labelZ = baseZ + 22;
+      } else if (node.label === "CONTEXT") {
+        const layers = node.properties?.layers || 3;
+        for (let layer = 0; layer < layers; layer += 1) {
+          const plate = { x: rect.x + layer * 3, y: rect.y + layer * 2, width: rect.width - layer * 6, height: rect.height - layer * 4 };
+          pieces.push(extrudedRect(plate, baseZ + layer * 6, 3.4, faceTones(mixColor(color, "#f2d8b3", layer / Math.max(1, layers) * .2))));
+          pieces.push(topOutline({ x: plate.x + 4, y: plate.y + 4, width: plate.width - 8, height: plate.height - 8 }, baseZ + layer * 6 + 3.4, tones.edge, "3 2"));
+        }
+        labelZ = baseZ + layers * 6 + 5;
+      } else if (node.label === "WORKBENCH") {
+        const base = { x: rect.x + 3, y: rect.y + rect.height * .56, width: rect.width - 6, height: rect.height * .31 };
+        pieces.push(extrudedRect(base, baseZ, 2.5, tones));
+        const postSize = 5;
+        const postZ = baseZ + 2.5;
+        const postHeight = 18;
+        for (const point of [{ x: rect.x + 6, y: rect.y + 5 }, { x: rect.x + rect.width - 11, y: rect.y + 5 }, { x: rect.x + 6, y: rect.y + rect.height - 12 }, { x: rect.x + rect.width - 11, y: rect.y + rect.height - 12 }]) {
+          pieces.push(extrudedRect({ x: point.x, y: point.y, width: postSize, height: postSize }, postZ, postHeight, tones));
+        }
+        const roof = { x: rect.x + 1, y: rect.y + 1, width: rect.width - 2, height: rect.height - 2 };
+        pieces.push(extrudedRect(roof, postZ + postHeight, 2.5, faceTones(mixColor(color, "#f0d7b2", .16))));
+        const modules = node.properties?.modules || 5;
+        for (let index = 0; index < modules; index += 1) {
+          const module = { x: base.x + 6 + index * ((base.width - 16) / modules), y: base.y + 3, width: Math.max(4, (base.width - 20) / modules), height: base.height - 6 };
+          pieces.push(extrudedRect(module, baseZ + 2.5, 2.5 + (index % 2), faceTones(mixColor(color, "#f2d5ad", index / Math.max(1, modules) * .18))));
+        }
+        labelZ = postZ + postHeight + 5;
+      } else {
+        pieces.push(extrudedRect(rect, baseZ, 7, tones));
+        labelZ = baseZ + 9;
+      }
+
+      const labelPoint = project({ x: rect.x + rect.width / 2, y: rect.y + rect.height / 2, z: labelZ });
+      const labelSize = node.visualRole === "main-stage" ? 10.5 : 8.5;
+      const labelColor = node.visualRole === "main-stage" ? "#203039" : "#4f4c45";
+      pieces.push(text(labelPoint.x, labelPoint.y + 3, node.label, labelSize, labelColor, 750));
+      return `<g data-node-id="${node.id}" filter="${node.visualRole === "main-stage" ? "url(#soft-shadow)" : "none"}">${pieces.join("")}</g>`;
+    }
+
+    function renderNode(node, layout, stageIndex) {
+      return renderStageGeometry(node, layout, stageIndex);
+    }
+
+    function renderPlanGrid() {
+      const lines = [];
+      for (let x = 0; x <= 594; x += GRID_STEP) {
+        lines.push(`<line x1="${project({ x, y: 0 }).x.toFixed(1)}" y1="${project({ x, y: 0 }).y.toFixed(1)}" x2="${project({ x, y: 210 }).x.toFixed(1)}" y2="${project({ x, y: 210 }).y.toFixed(1)}"/>`);
+      }
+      for (let y = 0; y <= 210; y += GRID_STEP) {
+        lines.push(`<line x1="${project({ x: 0, y }).x.toFixed(1)}" y1="${project({ x: 0, y }).y.toFixed(1)}" x2="${project({ x: 594, y }).x.toFixed(1)}" y2="${project({ x: 594, y }).y.toFixed(1)}"/>`);
+      }
+      return `<g class="plan-grid" stroke="#89928f" stroke-width=".55" opacity=".18">${lines.join("")}</g>${text(1015, 642, `${GRID_STEP} mm GRID`, 8, "#89928f", 650, "end")}`;
+    }
+
+    function routeMarkup(edge, route) {
+      const role = edge.visualRole;
+      const style = role === "main-flow" ? "stroke:#4f718b;stroke-width:2.4;" : role === "alternative" ? "stroke:#9b9a95;stroke-width:1.5;stroke-dasharray:6 5;" : role === "external-input" ? "stroke:#c66a43;stroke-width:1.4;stroke-dasharray:2 5;" : "stroke:#7467a8;stroke-width:1.8;stroke-dasharray:8 4;";
+      const marker = role === "main-flow" ? "arrow-main" : role === "alternative" ? "arrow-alt" : role === "external-input" ? "arrow-input" : "arrow-loop";
+      const bendPoints = route.points.slice(1, -1).map((point) => { const p = project(point); return `<rect x="${(p.x - 1.3).toFixed(1)}" y="${(p.y - 1.3).toFixed(1)}" width="2.6" height="2.6" fill="#f7f4ee" stroke="#4f718b" stroke-width=".55"/>`; }).join("");
+      return `<g data-route-id="${edge.id}"><polyline points="${pointsString(route.points)}" fill="none" stroke-linecap="square" stroke-linejoin="miter" marker-end="url(#${marker})" style="${style}"/>${bendPoints}</g>`;
+    }
+
+    function annotationMarkup(annotation, diagram, layout) {
+      let base;
+      if (annotation.anchor.kind === "canvas") base = project(annotation.anchor.position);
+      else if (annotation.anchor.kind === "node") base = nodeCenter(layout.nodes[annotation.anchor.targetId]);
+      else base = project(midpoint(layout.routes[annotation.anchor.targetId].points));
+      const offset = annotation.anchor.offset || { x: 0, y: 0 };
+      const target = project({ x: (annotation.anchor.kind === "canvas" ? annotation.anchor.position.x : (annotation.anchor.kind === "node" ? layout.nodes[annotation.anchor.targetId].x + layout.nodes[annotation.anchor.targetId].width / 2 : midpoint(layout.routes[annotation.anchor.targetId].points).x)) + offset.x, y: (annotation.anchor.kind === "canvas" ? annotation.anchor.position.y : (annotation.anchor.kind === "node" ? layout.nodes[annotation.anchor.targetId].y + layout.nodes[annotation.anchor.targetId].height / 2 : midpoint(layout.routes[annotation.anchor.targetId].points).y)) + offset.y });
+      const labelX = annotation.visualRole === "title"
+        ? Math.min(860, Math.max(260, target.x + 150))
+        : Math.min(1015, Math.max(95, target.x + 35));
+      const labelY = Math.max(30, target.y - (annotation.visualRole === "title" ? 24 : 30));
+      const color = annotation.visualRole === "loop-note" ? "#7467a8" : annotation.visualRole === "editorial-note" ? "#c66a43" : "#596b76";
+      return `<g class="annotation"><path d="M${base.x.toFixed(1)} ${base.y.toFixed(1)} L${labelX.toFixed(1)} ${(labelY + 5).toFixed(1)}" fill="none" stroke="${color}" stroke-width=".8" stroke-dasharray="2 3"/><circle cx="${base.x.toFixed(1)}" cy="${base.y.toFixed(1)}" r="2.5" fill="${color}"/>${text(labelX, labelY, annotation.text, annotation.visualRole === "title" ? 13 : 9, color, 650, annotation.visualRole === "title" ? "middle" : "start")}</g>`;
+    }
+
+    function render(diagram) {
+      currentDiagram = diagram;
+      const layout = effectiveLayout(diagram);
+      const semantic = diagram.semantic || { nodes: [], edges: [], groups: [] };
+      const pieces = [];
+      pieces.push(`<rect x="0" y="0" width="1100" height="700" fill="#f8f6f1"/>`);
+      const leftPage = [{ x: 0, y: 0 }, { x: 297, y: 0 }, { x: 297, y: 210 }, { x: 0, y: 210 }];
+      const rightPage = [{ x: 297, y: 0 }, { x: 594, y: 0 }, { x: 594, y: 210 }, { x: 297, y: 210 }];
+      pieces.push(`<polygon points="${pointsString(leftPage)}" fill="#fbfaf7" stroke="#ded8ce" stroke-width="1"/><polygon points="${pointsString(rightPage)}" fill="#f7f4ed" stroke="#ded8ce" stroke-width="1"/>`);
+      pieces.push(renderPlanGrid());
+      pieces.push(`<polygon points="${pointsString([{ x: 291, y: 0 }, { x: 303, y: 0 }, { x: 303, y: 210 }, { x: 291, y: 210 }])}" fill="#706a61" opacity=".08"/><path d="M${project({ x: 297, y: 0 }).x} ${project({ x: 297, y: 0 }).y} L${project({ x: 297, y: 210 }).x} ${project({ x: 297, y: 210 }).y}" stroke="#706a61" stroke-dasharray="4 5" stroke-width="1"/>${text(project({ x: 297, y: 8 }).x, project({ x: 297, y: 8 }).y - 6, "A4 GUTTER", 8, "#77736b", 650)}`);
+      semantic.groups.forEach((group) => { const bounds = layout.groups[group.id]?.bounds; if (!bounds) return; pieces.push(`<polygon points="${rectPoints(bounds)}" fill="#d9d3c8" opacity=".06" stroke="#9e9588" stroke-width="1" stroke-dasharray="5 5"/>${text(project({ x: bounds.x + 3, y: bounds.y + 5 }).x, project({ x: bounds.x + 3, y: bounds.y + 5 }).y, group.label, 9, "#8c8376", 650, "start")}`); });
+      semantic.edges.forEach((edge) => { const route = layout.routes[edge.id]; if (route) pieces.push(routeMarkup(edge, route)); });
+      let stageIndex = 0;
+      semantic.nodes.slice().sort((a, b) => (layout.nodes[a.id]?.zIndex || 0) - (layout.nodes[b.id]?.zIndex || 0)).forEach((node) => { const nodeLayout = layout.nodes[node.id]; if (!nodeLayout) return; pieces.push(renderNode(node, nodeLayout, node.visualRole === "main-stage" ? stageIndex++ : 0)); });
+      (diagram.annotations || []).forEach((annotation) => { if ((annotation.anchor.kind === "node" && layout.nodes[annotation.anchor.targetId]) || (annotation.anchor.kind === "edge" && layout.routes[annotation.anchor.targetId]) || annotation.anchor.kind === "canvas") pieces.push(annotationMarkup(annotation, diagram, layout)); });
+      pieces.push(text(66, 38, "FLOVVAS / GOLDEN CASE", 10, "#8c8376", 700, "start"));
+      pieces.push(text(1036, 662, "diagram.json → RenderDocument → scene", 9, "#8c8376", 500, "end"));
+      scene.innerHTML = pieces.join("");
+      sourceStatus.textContent = diagram === FALLBACK_GOLDEN_CASE ? "file:// fallback snapshot" : "已加载 examples/flovvas-massing.diagram.json";
+    }
+
+    async function loadGoldenCase() {
+      try {
+        const response = await fetch("../examples/flovvas-massing.diagram.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("fixture unavailable");
+        return await response.json();
+      } catch (error) {
+        return FALLBACK_GOLDEN_CASE;
+      }
+    }
+
+    document.getElementById("reset-view").addEventListener("click", () => { if (currentDiagram) render(currentDiagram); });
+    document.getElementById("download-svg").addEventListener("click", () => {
+      const svg = document.getElementById("reference-scene");
+      const bytes = new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml;charset=utf-8" });
+      const link = document.createElement("a"); link.download = "flovvas-reference-renderer.svg"; link.href = URL.createObjectURL(bytes); link.click(); URL.revokeObjectURL(link.href);
+    });
+    loadGoldenCase().then(render);
+  </script>
+</body>
+</html>

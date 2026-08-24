@@ -339,7 +339,9 @@
       else base = project(midpoint(layout.routes[annotation.anchor.targetId].points));
       const offset = annotation.anchor.offset || { x: 0, y: 0 };
       const target = project({ x: (annotation.anchor.kind === "canvas" ? annotation.anchor.position.x : (annotation.anchor.kind === "node" ? layout.nodes[annotation.anchor.targetId].x + layout.nodes[annotation.anchor.targetId].width / 2 : midpoint(layout.routes[annotation.anchor.targetId].points).x)) + offset.x, y: (annotation.anchor.kind === "canvas" ? annotation.anchor.position.y : (annotation.anchor.kind === "node" ? layout.nodes[annotation.anchor.targetId].y + layout.nodes[annotation.anchor.targetId].height / 2 : midpoint(layout.routes[annotation.anchor.targetId].points).y)) + offset.y });
-      const labelX = Math.min(1015, Math.max(95, target.x + (annotation.visualRole === "title" ? 0 : 35)));
+      const labelX = annotation.visualRole === "title"
+        ? Math.min(860, Math.max(260, target.x + 150))
+        : Math.min(1015, Math.max(95, target.x + 35));
       const labelY = Math.max(30, target.y - (annotation.visualRole === "title" ? 24 : 30));
       const color = annotation.visualRole === "loop-note" ? "#7467a8" : annotation.visualRole === "editorial-note" ? "#c66a43" : "#596b76";
       return `<g class="annotation"><path d="M${base.x.toFixed(1)} ${base.y.toFixed(1)} L${labelX.toFixed(1)} ${(labelY + 5).toFixed(1)}" fill="none" stroke="${color}" stroke-width=".8" stroke-dasharray="2 3"/><circle cx="${base.x.toFixed(1)}" cy="${base.y.toFixed(1)}" r="2.5" fill="${color}"/>${text(labelX, labelY, annotation.text, annotation.visualRole === "title" ? 13 : 9, color, 650, annotation.visualRole === "title" ? "middle" : "start")}</g>`;

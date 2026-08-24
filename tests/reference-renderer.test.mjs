@@ -40,4 +40,6 @@ test("Golden Case routes use square-grid edges and the renderer exposes that gri
   assert.match(html, /const GRID_STEP = 20/);
   assert.match(html, /class="plan-grid"/);
   assert.match(html, /stroke-linejoin="miter"/);
+  assert.match(html, /annotation\.visualRole === "title"/);
+  assert.match(html, /Math\.max\(260, target\.x \+ 150\)/);
 });

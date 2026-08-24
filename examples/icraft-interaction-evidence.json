@@ -1,0 +1,17 @@
+{
+  "format": "loom.icraft-interaction-evidence",
+  "version": "0.1",
+  "adapterId": "icraft-player",
+  "fixtureStatus": "synthetic-contract-only",
+  "fallbackAdapterId": "reference-renderer",
+  "operations": [
+    { "operation": "move", "status": "unsupported", "requiredCapability": "move-plane" },
+    { "operation": "rotate-y", "status": "unsupported", "requiredCapability": "rotate-y" },
+    { "operation": "scale-uniform", "status": "unsupported", "requiredCapability": "scale-uniform" },
+    { "operation": "elevation", "status": "unsupported", "requiredCapability": "elevation-edit" },
+    { "operation": "z-index", "status": "unsupported", "requiredCapability": "change-z-index" },
+    { "operation": "route-edit", "status": "unsupported", "requiredCapability": "edit-route" }
+  ],
+  "conclusion": "partial-no-go",
+  "note": "The public Player capability set currently covers load, pick, orbit-view and PNG export; unsupported direct manipulation must remain an explicit fallback."
+}

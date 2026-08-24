@@ -105,7 +105,7 @@ type RendererCapabilities = {
     | 'orbit-view'
   >
   exports: Array<'png'>
-  assetFormats: Array<'gltf' | 'glb' | 'image'>
+  assetFormats: Array<'iplayer' | 'gltf' | 'glb' | 'image'>
   features: string[]
   maxTextureSize?: number
 }

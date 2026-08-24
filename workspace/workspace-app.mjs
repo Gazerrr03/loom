@@ -18,6 +18,7 @@ import {
   createWorkspaceView,
   viewBasis,
 } from "./workspace-view.mjs";
+import { createRouteEditor } from "./route-editor.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 const GOLDEN_CASE_URL = "../examples/flovvas-massing.diagram.json";
@@ -58,6 +59,7 @@ const state = {
   fileName: null,
   revision: null,
   selectedId: null,
+  selectedEdgeId: null,
   query: "",
   dirty: false,
   error: null,
@@ -75,6 +77,8 @@ const state = {
   transformSequence: 0,
   viewController: createWorkspaceView(),
   viewPointer: null,
+  routeEditor: null,
+  activeRoutePointerId: null,
 };
 
 els.canvas.style.touchAction = "none";
@@ -149,6 +153,7 @@ async function captureCurrentCanvas({ request, composition }) {
   // Selection outlines and the authoring grid are editor-only guides, not PNG
   // layers. The exported artifact remains the same Diagram revision.
   svgCopy.querySelectorAll(".workspace-node[aria-selected=\"true\"] polyline").forEach((line) => line.remove());
+  svgCopy.querySelectorAll(".workspace-route-handle").forEach((handle) => handle.remove());
   svgCopy.querySelectorAll("#workspace-scene > rect").forEach((rect) => {
     const fill = rect.getAttribute("fill") ?? "";
     if (fill.includes("workspace-grid") || fill === "#d8c2ac") rect.remove();
@@ -228,6 +233,16 @@ function currentViewTransform() {
     zoom: view.zoom,
     basis: viewBasis(view),
   });
+}
+
+function refreshArtifactControllers() {
+  if (!state.artifact) {
+    state.canvasController = null;
+    state.routeEditor = null;
+    return;
+  }
+  state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+  state.routeEditor = createRouteEditor({ artifact: state.artifact, revision: state.revision });
 }
 
 function project(point) {
@@ -327,6 +342,75 @@ function renderNode(parent, node, layout, index) {
   parent.append(group);
 }
 
+function routeStroke(edge, selected = false) {
+  if (selected) return "#c66a43";
+  if (edge.visualRole === "alternative") return "#aaa49a";
+  if (edge.visualRole === "compounding-loop") return "#7467a8";
+  if (edge.visualRole === "external-input") return "#c66a43";
+  return "#58748b";
+}
+
+function renderRoute(parent, edge, route) {
+  const selected = state.selectedEdgeId === edge.id;
+  const routePointsAttribute = pointString(route.points);
+  const hitLine = svg("polyline", {
+    class: "workspace-route-hit",
+    "data-edge-id": edge.id,
+    points: routePointsAttribute,
+    fill: "none",
+    stroke: "transparent",
+    "stroke-width": 14,
+    "pointer-events": "stroke",
+    tabindex: "0",
+    role: "button",
+    "aria-label": `Route ${edge.id}`,
+    "aria-selected": selected ? "true" : "false",
+  });
+  hitLine.addEventListener("click", (event) => { event.stopPropagation(); selectRoute(edge.id); });
+  hitLine.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      selectRoute(edge.id);
+    }
+  });
+  const line = svg("polyline", {
+    class: "workspace-route",
+    "data-edge-id": edge.id,
+    points: routePointsAttribute,
+    fill: "none",
+    stroke: routeStroke(edge, selected),
+    "stroke-width": selected ? 3 : edge.visualRole === "main-flow" ? 2 : 1.2,
+    "stroke-dasharray": edge.visualRole === "alternative" ? "5 5" : "",
+    "marker-end": "url(#workspace-arrow)",
+    opacity: selected ? .98 : .82,
+    "pointer-events": "none",
+  });
+  parent.append(hitLine, line);
+}
+
+function renderRouteHandles(parent, edge, route) {
+  if (state.selectedEdgeId !== edge.id) return;
+  route.points.forEach((point, index) => {
+    const projected = project(point);
+    const handle = svg("circle", {
+      class: "workspace-route-handle",
+      "data-route-edge-id": edge.id,
+      "data-route-index": index,
+      cx: projected.x,
+      cy: projected.y,
+      r: index === 0 || index === route.points.length - 1 ? 5 : 4,
+      fill: "#fffdf9",
+      stroke: "#c66a43",
+      "stroke-width": 2,
+      tabindex: "0",
+      role: "button",
+      "aria-label": `编辑 ${edge.id} 路线点 ${index + 1}`,
+    });
+    handle.addEventListener("click", (event) => { event.stopPropagation(); selectRoute(edge.id); });
+    parent.append(handle);
+  });
+}
+
 function renderCanvas() {
   els.scene.replaceChildren();
   if (!state.artifact) {
@@ -351,12 +435,15 @@ function renderCanvas() {
   for (const edge of displayArtifact.semantic.edges) {
     const route = layout.routes[edge.id];
     if (!route?.points) continue;
-    const line = svg("polyline", { points: pointString(route.points), fill: "none", stroke: edge.visualRole === "alternative" ? "#aaa49a" : edge.visualRole === "compounding-loop" ? "#7467a8" : edge.visualRole === "external-input" ? "#c66a43" : "#58748b", "stroke-width": edge.visualRole === "main-flow" ? 2 : 1.2, "stroke-dasharray": edge.visualRole === "alternative" ? "5 5" : "", "marker-end": "url(#workspace-arrow)", opacity: .82 });
-    els.scene.append(line);
+    renderRoute(els.scene, edge, route);
   }
   [...displayArtifact.semantic.nodes].sort((left, right) => (layout.nodes[left.id]?.zIndex ?? 0) - (layout.nodes[right.id]?.zIndex ?? 0)).forEach((node, index) => {
     if (layout.nodes[node.id]) renderNode(els.scene, node, layout.nodes[node.id], index);
   });
+  for (const edge of displayArtifact.semantic.edges) {
+    const route = layout.routes[edge.id];
+    if (route?.points) renderRouteHandles(els.scene, edge, route);
+  }
   const title = displayArtifact.annotations?.find((annotation) => annotation.visualRole === "title");
   if (title) {
     const anchor = title.anchor?.position ?? { x: 22, y: 24 };
@@ -418,7 +505,7 @@ function commitInspectorField(operation, rawValue) {
     state.artifact = result.artifact;
     state.previewArtifact = null;
     state.dirty = true;
-    state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+    refreshArtifactControllers();
     setStatus("dirty", `已提交 ${result.command.type} · 1 个字段级 Human Override`);
     render();
   } catch (error) {
@@ -431,7 +518,7 @@ function commitInspectorField(operation, rawValue) {
 function applyComponentArtifact(artifact, message) {
   state.artifact = clone(artifact);
   state.previewArtifact = null;
-  state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+  refreshArtifactControllers();
   state.dirty = true;
   state.componentError = null;
   setStatus("dirty", message);
@@ -513,12 +600,30 @@ function renderComponents() {
 }
 
 function renderInspector() {
-  if (!state.artifact || !state.selectedId) {
+  if (!state.artifact || (!state.selectedId && !state.selectedEdgeId)) {
     els.inspector.replaceChildren();
     const empty = document.createElement("p");
     empty.className = "inspector-empty";
-    empty.textContent = state.artifact ? "选择一个 Scene Node 后，这里会显示它的语义身份、组件引用和构图状态。" : "打开 Diagram 后，这里会显示选中对象的语义上下文。";
+    empty.textContent = state.artifact ? "选择一个 Scene Node 或 Route 后，这里会显示它的语义身份和构图状态。" : "打开 Diagram 后，这里会显示选中对象的语义上下文。";
     els.inspector.append(empty);
+    return;
+  }
+  if (state.selectedEdgeId) {
+    const edge = state.artifact.semantic.edges.find((candidate) => candidate.id === state.selectedEdgeId);
+    const points = effectiveLayout(state.previewArtifact ?? state.artifact).routes[state.selectedEdgeId]?.points ?? [];
+    if (!edge) { state.selectedEdgeId = null; renderInspector(); return; }
+    els.inspector.replaceChildren();
+    const card = document.createElement("div");
+    card.className = "inspector-card";
+    const eyebrow = document.createElement("p"); eyebrow.className = "inspector-label"; eyebrow.textContent = "route";
+    const title = document.createElement("h3"); title.className = "inspector-title"; title.textContent = edge.id;
+    const hint = document.createElement("p"); hint.className = "inspector-help"; hint.textContent = state.previewArtifact ? "控制点预览中 · 松手提交一次路线 Override" : "拖动画布上的控制点，路线会在松手时一次提交。";
+    const field = document.createElement("div"); field.className = "field";
+    const caption = document.createElement("label"); caption.textContent = "Control points";
+    const code = document.createElement("code"); code.textContent = points.map((point) => `${point.x}, ${point.y}`).join(" → ");
+    field.append(caption, code);
+    card.append(eyebrow, title, hint, field);
+    els.inspector.append(card);
     return;
   }
   const displayArtifact = state.previewArtifact ?? state.artifact;
@@ -602,10 +707,12 @@ function setArtifact(artifact, fileName = "diagram.json") {
   state.fileName = fileName;
   state.revision = stableRevision(artifact);
   state.selectedId = null;
+  state.selectedEdgeId = null;
   state.dirty = false;
   state.previewArtifact = null;
-  state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+  refreshArtifactControllers();
   state.activePointerId = null;
+  state.activeRoutePointerId = null;
   state.dragging = false;
   state.moved = false;
   state.viewController.reset();
@@ -632,7 +739,7 @@ async function handleSave() {
     state.revision = receipt.revision;
     state.dirty = false;
     state.previewArtifact = null;
-    state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+    refreshArtifactControllers();
     setStatus("ready", `已保存 · ${receipt.revision}`);
   } catch (error) {
     state.dirty = true;
@@ -684,9 +791,12 @@ async function loadUrl(url, fileName = url.split("/").at(-1)) {
     state.fileName = null;
     state.revision = null;
     state.selectedId = null;
+    state.selectedEdgeId = null;
     state.previewArtifact = null;
     state.canvasController = null;
+    state.routeEditor = null;
     state.activePointerId = null;
+    state.activeRoutePointerId = null;
     state.dragging = false;
     state.moved = false;
     setStatus("error", "读取失败", error instanceof Error ? error : new Error(String(error)));
@@ -698,6 +808,16 @@ function selectNode(nodeId) {
   if (!state.artifact || !state.artifact.semantic.nodes.some((node) => node.id === nodeId)) return;
   state.canvasController?.selectNode(nodeId);
   state.selectedId = nodeId;
+  state.selectedEdgeId = null;
+  renderCanvas();
+  renderComponents();
+  renderInspector();
+}
+
+function selectRoute(edgeId) {
+  if (!state.artifact || !state.artifact.semantic.edges.some((edge) => edge.id === edgeId)) return;
+  state.selectedEdgeId = edgeId;
+  state.selectedId = null;
   renderCanvas();
   renderComponents();
   renderInspector();
@@ -713,7 +833,9 @@ function handleFile(file) {
       state.artifact = null;
       state.previewArtifact = null;
       state.canvasController = null;
+      state.routeEditor = null;
       state.activePointerId = null;
+      state.activeRoutePointerId = null;
       state.dragging = false;
       state.moved = false;
       setStatus("error", "文件无效", error instanceof Error ? error : new Error(String(error)));
@@ -724,7 +846,9 @@ function handleFile(file) {
     state.artifact = null;
     state.previewArtifact = null;
     state.canvasController = null;
+    state.routeEditor = null;
     state.activePointerId = null;
+    state.activeRoutePointerId = null;
     state.dragging = false;
     state.moved = false;
     setStatus("error", "文件读取失败", new Error("无法读取本地文件"));
@@ -784,6 +908,38 @@ function nodeIdFromEvent(event) {
   return target?.dataset?.nodeId ?? null;
 }
 
+function routeHandleFromEvent(event) {
+  const target = event.target?.closest?.("[data-route-edge-id][data-route-index]");
+  if (!target) return null;
+  return {
+    edgeId: target.dataset.routeEdgeId,
+    pointIndex: Number(target.dataset.routeIndex),
+  };
+}
+
+function routePointFromEvent(event) {
+  return currentViewTransform().screenToDiagram(viewBoxPoint(event), { z: 0 });
+}
+
+function startRoutePointer(event, handle) {
+  if (!state.routeEditor) return false;
+  const result = state.routeEditor.pointerDown({
+    edgeId: handle.edgeId,
+    pointIndex: handle.pointIndex,
+    pointerId: event.pointerId,
+  });
+  if (!result.accepted) return false;
+  state.selectedEdgeId = handle.edgeId;
+  state.selectedId = null;
+  state.activeRoutePointerId = event.pointerId;
+  state.dragging = false;
+  state.moved = false;
+  els.canvas.setPointerCapture?.(event.pointerId);
+  setStatus("ready", "路线控制点预览中 · 松手提交一次修改");
+  event.preventDefault();
+  return true;
+}
+
 function startViewPointer(event) {
   const point = viewBoxPoint(event);
   state.viewPointer = {
@@ -799,6 +955,8 @@ function startViewPointer(event) {
 
 function handlePointerDown(event) {
   if (!state.artifact || !state.canvasController || event.button !== 0) return;
+  const routeHandle = routeHandleFromEvent(event);
+  if (routeHandle && startRoutePointer(event, routeHandle)) return;
   const nodeId = nodeIdFromEvent(event);
   if (!nodeId) {
     try { startViewPointer(event); }
@@ -824,6 +982,22 @@ function handlePointerDown(event) {
 }
 
 function handlePointerMove(event) {
+  if (state.activeRoutePointerId === event.pointerId && state.routeEditor) {
+    try {
+      const result = state.routeEditor.pointerMove({ diagramPoint: routePointFromEvent(event) });
+      if (!result.accepted) return;
+      state.previewArtifact = state.routeEditor.getDisplayArtifact();
+      state.dragging = true;
+      state.moved = true;
+      setStatus("ready", "路线控制点预览中 · 松手提交一次修改");
+      renderCanvas();
+      renderInspector();
+      event.preventDefault();
+    } catch (error) {
+      setStatus("error", "路线预览失败", error instanceof Error ? error : new Error(String(error)));
+    }
+    return;
+  }
   if (state.viewPointer?.pointerId === event.pointerId) {
     try {
       const point = viewBoxPoint(event);
@@ -877,6 +1051,35 @@ function finishViewPointer(event, cancelled = false) {
 
 function finishPointer(event, cancelled = false) {
   if (finishViewPointer(event, cancelled)) return;
+  if (state.activeRoutePointerId === event.pointerId && state.routeEditor) {
+    let result;
+    try {
+      result = cancelled
+        ? state.routeEditor.cancel()
+        : state.routeEditor.pointerUp({ diagramPoint: state.moved ? routePointFromEvent(event) : undefined });
+      if (result.command) {
+        state.artifact = result.artifact;
+        state.dirty = true;
+        state.previewArtifact = null;
+        state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+        setStatus("dirty", "已提交 1 个路线字段级 Human Override");
+      } else {
+        state.previewArtifact = null;
+        setStatus("ready", cancelled ? "已取消路线预览" : "未移动 · 未提交路线修改");
+      }
+    } catch (error) {
+      state.previewArtifact = null;
+      setStatus("error", "路线提交失败", error instanceof Error ? error : new Error(String(error)));
+    }
+    state.suppressClick = state.moved;
+    state.activeRoutePointerId = null;
+    state.dragging = false;
+    state.moved = false;
+    els.canvas.releasePointerCapture?.(event.pointerId);
+    render();
+    event.preventDefault();
+    return;
+  }
   if (state.activePointerId !== event.pointerId || !state.canvasController) return;
   const active = state.canvasController.getState().active;
   let result;
@@ -889,6 +1092,7 @@ function finishPointer(event, cancelled = false) {
       state.artifact = result.artifact;
       state.dirty = true;
       state.previewArtifact = null;
+      refreshArtifactControllers();
       setStatus("dirty", "已提交 1 个字段级 Human Override");
     } else {
       state.previewArtifact = null;
@@ -940,6 +1144,11 @@ function handleKeyDown(event) {
     event.preventDefault();
     return;
   }
+  if (state.activeRoutePointerId !== null && state.routeEditor) {
+    finishPointer({ pointerId: state.activeRoutePointerId, preventDefault: () => {} }, true);
+    event.preventDefault();
+    return;
+  }
   if (state.activePointerId === null || !state.canvasController) return;
   const active = state.canvasController.getState().active;
   if (active) finishPointer({ pointerId: state.activePointerId, preventDefault: () => {} }, true);
@@ -972,6 +1181,7 @@ els.scene.addEventListener("click", () => {
   if (state.suppressClick) { state.suppressClick = false; return; }
   if (state.dragging) return;
   state.selectedId = null;
+  state.selectedEdgeId = null;
   renderCanvas();
   renderComponents();
   renderInspector();
@@ -981,6 +1191,7 @@ window.addEventListener("keydown", handleKeyDown);
 window.LoomWorkspace = Object.freeze({
   getState: () => clone(state),
   getCanvasState: () => state.canvasController?.getState() ?? null,
+  getRouteState: () => state.routeEditor?.getState() ?? null,
   getViewState: () => state.viewController.getState(),
   loadArtifact: (artifact, fileName) => setArtifact(artifact, fileName),
   loadUrl,

@@ -8,6 +8,7 @@ const indexHtml = await readFile(resolve(root, "workspace/index.html"), "utf8");
 const appModule = await readFile(resolve(root, "workspace/workspace-app.mjs"), "utf8");
 const transformModule = await readFile(resolve(root, "workspace/transform-inspector.mjs"), "utf8");
 const viewModule = await readFile(resolve(root, "workspace/workspace-view.mjs"), "utf8");
+const routeModule = await readFile(resolve(root, "workspace/route-editor.mjs"), "utf8");
 
 test("Workspace 壳层声明三个可见协作表面", () => {
   assert.match(indexHtml, /id="component-list"/);
@@ -55,4 +56,15 @@ test("Workspace Canvas exposes view-only navigation without coupling it to Artif
   assert.match(viewModule, /createWorkspaceView/);
   assert.match(viewModule, /viewBasis/);
   assert.doesNotMatch(viewModule, /from\s+["']node:/);
+});
+
+test("Workspace Canvas exposes route selection and one-shot control-point commit", () => {
+  assert.match(appModule, /data-route-edge-id/);
+  assert.match(appModule, /routeHandleFromEvent/);
+  assert.match(appModule, /getRouteState/);
+  assert.match(appModule, /createRouteEditor/);
+  assert.match(indexHtml, /workspace-route-handle/);
+  assert.match(routeModule, /createRouteEditor/);
+  assert.match(routeModule, /applyDomainCommand/);
+  assert.doesNotMatch(routeModule, /from\s+["']node:/);
 });

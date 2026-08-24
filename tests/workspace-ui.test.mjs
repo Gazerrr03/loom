@@ -94,3 +94,14 @@ test("Workspace history buttons bridge complete edits without importing Node-onl
   assert.match(historyModule, /redoHistoryStack/);
   assert.doesNotMatch(historyModule, /from\s+["']node:/);
 });
+
+test("Workspace file input preserves the current draft on cancel and parse/read errors", () => {
+  const handleFile = appModule.slice(appModule.indexOf("function handleFile"), appModule.indexOf("async function loadComponentCatalog"));
+  assert.match(appModule, /已取消打开 · 当前 Diagram 未改变/);
+  assert.match(appModule, /addEventListener\("cancel", \(\) => handleFile\(null\)\)/);
+  assert.match(handleFile, /setStatus\("error", "文件无效"/);
+  assert.match(handleFile, /setStatus\("error", "文件读取失败"/);
+  assert.doesNotMatch(handleFile, /state\.artifact = null/);
+  assert.match(appModule, /getState: \(\) => clone\(\{/);
+  assert.doesNotMatch(appModule, /getState: \(\) => clone\(state\)/);
+});

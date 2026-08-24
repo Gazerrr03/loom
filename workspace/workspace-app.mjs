@@ -1148,39 +1148,22 @@ function selectAnnotation(annotationId) {
 }
 
 function handleFile(file) {
-  if (!file) return;
+  if (!file) {
+    const status = state.artifact ? (state.dirty ? "dirty" : "ready") : "idle";
+    setStatus(status, "已取消打开 · 当前 Diagram 未改变");
+    renderMeta();
+    return;
+  }
   setStatus("loading", "正在解析本地 Diagram");
   const reader = new FileReader();
   reader.addEventListener("load", () => {
     try { setArtifact(JSON.parse(String(reader.result)), file.name); }
     catch (error) {
-      state.artifact = null;
-      state.previewArtifact = null;
-      state.history = null;
-      state.savedFingerprint = null;
-      state.canvasController = null;
-      state.routeEditor = null;
-      state.annotationEditor = null;
-      state.activePointerId = null;
-      state.activeRoutePointerId = null;
-      state.dragging = false;
-      state.moved = false;
       setStatus("error", "文件无效", error instanceof Error ? error : new Error(String(error)));
       render();
     }
   });
   reader.addEventListener("error", () => {
-    state.artifact = null;
-    state.previewArtifact = null;
-    state.history = null;
-    state.savedFingerprint = null;
-    state.canvasController = null;
-    state.routeEditor = null;
-    state.annotationEditor = null;
-    state.activePointerId = null;
-    state.activeRoutePointerId = null;
-    state.dragging = false;
-    state.moved = false;
     setStatus("error", "文件读取失败", new Error("无法读取本地文件"));
     render();
   });
@@ -1509,6 +1492,7 @@ function handleKeyDown(event) {
 
 els.openButton.addEventListener("click", () => els.fileInput.click());
 els.fileInput.addEventListener("change", () => handleFile(els.fileInput.files?.[0]));
+els.fileInput.addEventListener("cancel", () => handleFile(null));
 els.loadGoldenButton.addEventListener("click", () => loadUrl(GOLDEN_CASE_URL, "flovvas-massing.diagram.json"));
 els.saveButton.addEventListener("click", handleSave);
 els.undoButton.addEventListener("click", handleUndo);
@@ -1544,7 +1528,23 @@ els.scene.addEventListener("click", () => {
 window.addEventListener("keydown", handleKeyDown);
 
 window.LoomWorkspace = Object.freeze({
-  getState: () => clone(state),
+  getState: () => clone({
+    status: state.status,
+    artifact: state.artifact,
+    fileName: state.fileName,
+    revision: state.revision,
+    selectedId: state.selectedId,
+    selectedEdgeId: state.selectedEdgeId,
+    selectedAnnotationId: state.selectedAnnotationId,
+    query: state.query,
+    dirty: state.dirty,
+    error: state.error ? { name: state.error.name, message: state.error.message, code: state.error.code ?? null } : null,
+    previewArtifact: state.previewArtifact,
+    componentError: state.componentError,
+    saving: state.saving,
+    exporting: state.exporting,
+    lastExport: state.lastExport,
+  }),
   getCanvasState: () => state.canvasController?.getState() ?? null,
   getRouteState: () => state.routeEditor?.getState() ?? null,
   getAnnotationState: () => state.annotationEditor?.getState() ?? null,

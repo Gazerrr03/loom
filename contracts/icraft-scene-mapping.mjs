@@ -216,7 +216,7 @@ export function resolveIcraftSceneMapping(
         zIndex: projected.zIndex,
         parameters: clone(projected.parameters),
         status: "mapped",
-        warnings: [...projected.warnings],
+        warnings: [],
       });
     }
 

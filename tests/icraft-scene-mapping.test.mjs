@@ -67,7 +67,9 @@ test("the mapping joins every public scene element to stable Loom identity and o
   assert.equal(result.overlays.phaseZones.length, 4);
   assert.equal(result.overlays.annotations.length, document.annotations.length);
   assert.deepEqual(result.unmappedLoomNodeIds, []);
-  assert.equal(result.sceneNodes.find(({ nodeId }) => nodeId === "stage-workbench").componentRef, "flovvas-workbench");
+  const workbench = result.sceneNodes.find(({ nodeId }) => nodeId === "stage-workbench");
+  assert.equal(workbench.componentRef, "flovvas-workbench");
+  assert.deepEqual(workbench.warnings, []);
 });
 
 test("reloading the same revision is stable while a view change stays in Diagram space", async () => {

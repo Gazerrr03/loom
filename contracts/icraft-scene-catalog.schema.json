@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://loom.local/schemas/icraft-scene-catalog.schema.json",
+  "title": "Loom iCraft Scene Catalog",
+  "description": "Stable references and authorization evidence for externally hosted iCraft scenes. Scene contents are never embedded.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "schemaVersion", "renderer", "scenes"],
+  "properties": {
+    "format": { "const": "loom.icraft-scene-catalog" },
+    "schemaVersion": { "const": "0.1.0" },
+    "renderer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapterId", "adapterVersion"],
+      "properties": {
+        "adapterId": { "const": "icraft-player" },
+        "adapterVersion": { "type": "string", "minLength": 1 }
+      }
+    },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/scene" }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9._-]*$"
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "semanticDescription", "searchTerms", "previewUri", "source", "availability", "rendererMapping"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1 },
+        "semanticDescription": { "type": "string", "minLength": 1 },
+        "searchTerms": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "previewUri": { "type": "string", "minLength": 1 },
+        "source": { "$ref": "#/$defs/source" },
+        "availability": { "enum": ["available", "unverified", "missing", "unauthorized"] },
+        "rendererMapping": { "$ref": "#/$defs/rendererMapping" }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "uri", "version", "license", "licenseUrl", "authorizationStatus", "authorizationEvidence"],
+      "properties": {
+        "kind": { "const": "iplayer" },
+        "uri": { "type": "string", "pattern": "^(https?|file)://.+\\.iplayer(?:[?#].*)?$" },
+        "version": { "type": "string", "minLength": 1 },
+        "license": { "type": "string", "minLength": 1 },
+        "licenseUrl": { "type": "string", "pattern": "^https://" },
+        "authorizationStatus": { "enum": ["personal-use", "explicit", "unknown", "denied"] },
+        "authorizationEvidence": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^https://" }
+        },
+        "verifiedAt": { "type": "string", "format": "date" }
+      }
+    },
+    "rendererMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapterId", "implementationRef", "requiredCapabilities"],
+      "properties": {
+        "adapterId": { "const": "icraft-player" },
+        "implementationRef": { "type": "string", "minLength": 1 },
+        "requiredCapabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

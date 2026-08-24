@@ -1,0 +1,36 @@
+{
+  "format": "loom.icraft-scene-catalog",
+  "schemaVersion": "0.1.0",
+  "renderer": {
+    "adapterId": "icraft-player",
+    "adapterVersion": "public-player-api"
+  },
+  "scenes": [
+    {
+      "id": "icraft-aws-cloud",
+      "name": "AWS Cloud",
+      "semanticDescription": "Official iCraft cloud architecture scene for a connected system overview.",
+      "searchTerms": ["aws", "cloud", "architecture", "network", "云", "架构"],
+      "previewUri": "https://icraft.gantcloud.com/api/static/templates/AWSCloud.iplayer",
+      "source": {
+        "kind": "iplayer",
+        "uri": "https://icraft.gantcloud.com/api/static/templates/AWSCloud.iplayer",
+        "version": "official-template-v1",
+        "license": "iCraft Player personal use",
+        "licenseUrl": "https://icraft.gantcloud.com/player-javascript/intro",
+        "authorizationStatus": "personal-use",
+        "authorizationEvidence": [
+          "https://icraft.gantcloud.com/player-javascript/intro",
+          "https://icraft.gantcloud.com/pricing"
+        ],
+        "verifiedAt": "2026-08-24"
+      },
+      "availability": "unverified",
+      "rendererMapping": {
+        "adapterId": "icraft-player",
+        "implementationRef": "external://icraft-player/scene",
+        "requiredCapabilities": ["scene-load", "remote-iplayer"]
+      }
+    }
+  ]
+}

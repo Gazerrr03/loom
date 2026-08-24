@@ -1,6 +1,13 @@
 {
   "format": "loom.component-catalog",
   "schemaVersion": "0.1.0",
+  "externalSceneCatalogs": [
+    {
+      "id": "icraft-official-scenes",
+      "path": "examples/icraft-scene-catalog.json",
+      "renderer": "icraft-player"
+    }
+  ],
   "goldenTemplateIds": [
     "flovvas-line",
     "flovvas-branch",

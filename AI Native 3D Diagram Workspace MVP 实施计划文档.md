@@ -213,6 +213,8 @@ P0 能力：
 
 目标：排除“只在开发者电脑当前状态能跑”的假成功。
 
+M8-01 的本地运行入口固定为仓库根目录的 `node scripts/loom-healthcheck.mjs`、`node --test` 和 `python3 -m http.server 18768`。健康检查只验证仓库内可重复的 Core、Renderer-independent RenderDocument 与 MCP lifecycle 边界；它不会把外部 Codex 登录或 iCraft 授权当作本地成功证据。
+
 验收：
 
 - 从干净安装启动 Core、Workspace 和 MCP。

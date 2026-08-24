@@ -214,9 +214,30 @@ Loom MVP 不是“所有模块都有代码”，而是必须完成下面两个�
 
 这些不是产品永远不会做，而是首版不让它们稀释“从语义到可用作品集图”的核心证据。
 
+## 本地运行契约（M8-01）
+
+当前 MVP 基线不依赖 `npm install`、云账号或开发者机器上的缓存。仓库没有 package manager 依赖；运行时只需要 Node.js 20+，如果要打开浏览器 Workspace，再需要一个能提供静态文件的 HTTP server（macOS/Linux 可直接使用 Python 3 标准库）。
+
+在一个全新的 checkout 中执行：
+
+```bash
+# 1. 验证 Node、Diagram Core、RenderDocument 和 MCP lifecycle 能力
+node scripts/loom-healthcheck.mjs
+
+# 2. 运行完整的 Node contract/core 测试
+node --test
+
+# 3. 启动 Workspace 静态入口（另开一个终端）
+python3 -m http.server 18768
+```
+
+然后打开 <http://127.0.0.1:18768/workspace/index.html>，点击「载入 Golden Case」。页面加载失败时，先检查 server 的当前目录是否为仓库根目录，以及端口是否被占用；健康检查失败时，终端会输出第一个失败的边界。
+
+`loom-healthcheck.mjs` 会检查：Golden fixture 的节点/关系覆盖、Core 的 Effective Layout、Renderer-independent `RenderDocument` 的四层出口，以及 MCP `diagram.validate` 的版本化 tool envelope。它不伪造外部 Codex 登录或 iCraft 授权；真实 Codex 会话和外部场景仍需在对应 Gate 中单独提供证据。
+
 ## 当前仓库是什么
 
-这个仓库目前是 Loom 的产品、契约、Golden Case 和 MVP 交付包，用来把最终产品形态冻结成可实现、可验收的边界；它还不是已经可以启动的 Workspace 应用。
+这个仓库现在包含 Loom 的产品、契约、Golden Case、可运行的 Workspace UI、Core/MCP 基线和 MVP 交付验证脚本。`diagram.json` 是唯一正式资产；Workspace 的浏览器保存使用 JSON 下载适配器，PNG 使用 Reference Renderer 的 capture 适配器。
 
 已落地：
 
@@ -226,12 +247,11 @@ Loom MVP 不是“所有模块都有代码”，而是必须完成下面两个�
 - M0–M8 模块 Issue 与下一层原子 Issue 的拆分；
 - 产品模块运作图。
 
-尚未落地：
+尚未形成完整证据：
 
-- 可运行的 Workspace UI；
-- Diagram Core、Layout、Renderer 和 PNG Export 的实现；
-- Codex / MCP Server 的真实连接；
-- 从干净环境跑通的端到端 Golden Journey。
+- 外部 Codex Runtime 的真实自然语言创建与三次往返；
+- 已授权 iCraft `.iplayer` fixture 的加载、映射和直接操作闭环；
+- 作者对最终 PNG 的作品集视觉接受结论。
 
 当前下一步是先用 Golden Case 做视觉纵切，确认参数化 `card-slab` 原语能否达到作品集质量，再扩展 Core、Workspace 和 MCP。iCraft 的验证与授权是并行 Gate，不应阻塞 Reference Renderer 的主路径。
 

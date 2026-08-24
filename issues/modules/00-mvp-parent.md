@@ -41,6 +41,25 @@ MVP 有两个协作表面：Codex 负责自然语言创建、理解和语义修�
 - [ ] iCraft 不可用或未获授权时，Reference Renderer 仍能完成主闭环。
 - [ ] Flovvas Golden Case 的双 A4 PNG 被作者接受进入作品集排版。
 
+## M8-04 关闭清单与证据索引
+
+这张清单是关闭 #55、#10 和 #1 前的唯一汇总入口。`通过` 只代表仓库中存在可复核证据；`待验收` 或 `阻塞` 不得被解释为已通过。
+
+| Gate / 证据 | 当前结论 | 可复核入口 |
+|---|---|---|
+| Gate 0 Golden Case、结构覆盖、Schema 与验收契约 | 通过（自动化结构证据） | #11–#13、`examples/flovvas-massing.diagram.json`、`node --test` |
+| Gate 1 Reference Renderer 技术纵切 | 技术路径可运行；作者视觉结论待验收 | #36、`diagrams/flovvas-reference-renderer.html`、`tests/reference-renderer.test.mjs` |
+| Gate 2 Diagram Core / layout / persistence | 通过（契约与往返测试） | #14–#20、`tests/diagram-core.test.mjs`、`tests/artifact-store.test.mjs` |
+| Gate 3 Workspace drag / component / Save / PNG | 通过（浏览器 smoke + 204/204） | #110、#112、#111；PR #116、#117、#118 |
+| Gate 4 MCP contracts / semantic transaction | 合同通过；真实 Codex 运行时待验收 | #44–#47、#53、`tests/semantic-transaction.test.mjs` |
+| Gate 5 clean local runtime | 通过（仓库内能力检查） | #52、PR #119、`node scripts/loom-healthcheck.mjs` |
+| Codex 创建旅程 | 阻塞：尚无真实外部 Codex → MCP 会话证据 | #53 |
+| Codex ↔ Workspace 三次往返 | 阻塞：依赖 #53，尚无真实会话录制 | #54 |
+| iCraft 首选 Renderer | 阻塞：现有记录是公开能力/授权证据与 synthetic contract，缺真实授权 fixture | #84、#86–#88 |
+| 最终 PNG 作品集接受 | 待作者验收，不由自动化像素比较替代 | #36、#55 |
+
+关闭规则：只要“真实 Codex 会话”“三次往返”“iCraft 授权 fixture”或“作者 PNG 结论”任一项缺失，#55、#10 与 #1 必须保持开启。Reference Renderer fallback 可以支撑技术主路径，但不能冒充外部能力或作者审美验收。
+
 ## 明确不在 MVP 内
 
 - 多人实时协作、账号、权限和云同步。

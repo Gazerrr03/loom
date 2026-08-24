@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 const root = resolve(import.meta.dirname, "..");
 const indexHtml = await readFile(resolve(root, "workspace/index.html"), "utf8");
 const appModule = await readFile(resolve(root, "workspace/workspace-app.mjs"), "utf8");
+const transformModule = await readFile(resolve(root, "workspace/transform-inspector.mjs"), "utf8");
 
 test("Workspace 壳层声明三个可见协作表面", () => {
   assert.match(indexHtml, /id="component-list"/);
@@ -31,4 +32,14 @@ test("Workspace 只在本地内存中展示 canonical Diagram，并暴露可测�
   assert.match(appModule, /loadArtifact: \(artifact, fileName\) => setArtifact/);
   assert.doesNotMatch(appModule, /from\s+["']node:/);
   assert.doesNotMatch(appModule, /innerHTML\s*=/);
+});
+
+test("Workspace Inspector exposes the four node transform controls through a browser-safe bridge", () => {
+  for (const operation of ["rotateY", "scale", "elevation", "zIndex"]) {
+    assert.match(appModule, new RegExp(`\\"${operation}\\"`));
+  }
+  assert.match(appModule, /previewInspectorTransform/);
+  assert.match(appModule, /commitInspectorTransform/);
+  assert.match(transformModule, /applyDomainCommand/);
+  assert.doesNotMatch(transformModule, /from\s+["']node:/);
 });

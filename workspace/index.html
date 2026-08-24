@@ -71,6 +71,10 @@
     .field { display: grid; gap: 4px; }
     .field label { color: var(--muted); font-size: 10px; }
     .field code, .revision { overflow-wrap: anywhere; padding: 7px 8px; border-radius: 7px; background: #f5f1e9; color: #52616a; font: 10px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .field input { width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 7px; outline: 0; color: var(--ink); background: #fbfaf6; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .field input:focus { border-color: #ca8a69; box-shadow: 0 0 0 3px rgba(198,106,67,.11); }
+    .transform-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; padding-top: 2px; }
+    .inspector-help { margin: -2px 0 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
     .notice { margin-top: 12px; padding: 9px 10px; border: 1px solid #e5c7b6; border-radius: 8px; color: #8d543b; background: #fcf0e8; font-size: 11px; line-height: 1.45; }
     .notice[hidden] { display: none; }
     .legend { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -128,7 +132,7 @@
             <g id="workspace-scene"></g>
           </svg>
         </div>
-        <div class="canvas-foot"><div class="legend"><span><i class="dot"></i>主路径</span><span><i class="dot alt"></i>替代路径</span><span><i class="dot input"></i>外部输入</span></div><span><kbd>Click</kbd> 选择 · <kbd>Drag</kbd> 交互将在下一原子 Issue 接入</span></div>
+        <div class="canvas-foot"><div class="legend"><span><i class="dot"></i>主路径</span><span><i class="dot alt"></i>替代路径</span><span><i class="dot input"></i>外部输入</span></div><span><kbd>Click</kbd> 选择 · <kbd>Drag</kbd> 移动节点 · Inspector 调整变换</span></div>
       </section>
 
       <aside class="panel inspector-panel" aria-labelledby="inspector-heading">

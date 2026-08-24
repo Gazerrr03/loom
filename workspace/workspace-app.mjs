@@ -10,6 +10,10 @@ import {
   createWorkspacePngPlan,
   saveWorkspaceWithAdapter,
 } from "./workspace-storage.mjs";
+import {
+  commitInspectorTransform,
+  previewInspectorTransform,
+} from "./transform-inspector.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 const GOLDEN_CASE_URL = "../examples/flovvas-massing.diagram.json";
@@ -59,6 +63,7 @@ const state = {
   saving: false,
   exporting: false,
   lastExport: null,
+  transformSequence: 0,
 };
 
 els.canvas.style.touchAction = "none";
@@ -342,6 +347,52 @@ function selectedComponentNode() {
   return state.artifact?.semantic.nodes.find((node) => node.id === state.selectedId) ?? null;
 }
 
+function nextTransformGesture(operation) {
+  state.transformSequence += 1;
+  return `workspace-transform-${operation.toLocaleLowerCase()}-${state.transformSequence}`;
+}
+
+function transformOptions(operation, rawValue) {
+  return {
+    baseRevision: state.revision,
+    gestureId: nextTransformGesture(operation),
+    nodeId: state.selectedId,
+    operation,
+    value: rawValue,
+  };
+}
+
+function previewInspectorField(operation, rawValue) {
+  if (!state.artifact || !state.selectedId || state.activePointerId !== null) return;
+  try {
+    const result = previewInspectorTransform(state.artifact, transformOptions(operation, rawValue));
+    state.previewArtifact = result.artifact;
+    setStatus("ready", "变换预览中 · 提交字段后写入一次 Override");
+    renderCanvas();
+  } catch (error) {
+    state.previewArtifact = null;
+    setStatus("error", "变换预览失败", error instanceof Error ? error : new Error(String(error)));
+    renderCanvas();
+  }
+}
+
+function commitInspectorField(operation, rawValue) {
+  if (!state.artifact || !state.selectedId || state.activePointerId !== null) return;
+  try {
+    const result = commitInspectorTransform(state.artifact, transformOptions(operation, rawValue));
+    state.artifact = result.artifact;
+    state.previewArtifact = null;
+    state.dirty = true;
+    state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+    setStatus("dirty", `已提交 ${result.command.type} · 1 个字段级 Human Override`);
+    render();
+  } catch (error) {
+    state.previewArtifact = null;
+    setStatus("error", "变换提交失败", error instanceof Error ? error : new Error(String(error)));
+    render();
+  }
+}
+
 function applyComponentArtifact(artifact, message) {
   state.artifact = clone(artifact);
   state.previewArtifact = null;
@@ -452,6 +503,37 @@ function renderInspector() {
     const code = document.createElement("code"); code.textContent = String(value);
     wrapper.append(caption, code); card.append(wrapper);
   }
+  const transformHelp = document.createElement("p");
+  transformHelp.className = "inspector-help";
+  transformHelp.textContent = "编辑后先在画布预览，离开字段时提交一次变换命令。";
+  card.append(transformHelp);
+  const transformGrid = document.createElement("div");
+  transformGrid.className = "transform-grid";
+  const transformFields = [
+    ["绕 Y 轴旋转", "rotateY", layout.rotationYDeg ?? 0, "1"],
+    ["等比缩放", "scale", layout.scale ?? 1, "0.05"],
+    ["Elevation", "elevation", layout.elevation ?? 0, "1"],
+    ["前后层级", "zIndex", layout.zIndex ?? 0, "1"],
+  ];
+  for (const [name, operation, value, step] of transformFields) {
+    const wrapper = document.createElement("div");
+    wrapper.className = "field transform-field";
+    const caption = document.createElement("label");
+    caption.textContent = name;
+    caption.htmlFor = `transform-${operation}`;
+    const input = document.createElement("input");
+    input.id = `transform-${operation}`;
+    input.type = "number";
+    input.step = step;
+    input.value = String(value);
+    input.dataset.transformOperation = operation;
+    input.setAttribute("aria-label", name);
+    input.addEventListener("input", () => previewInspectorField(operation, input.value));
+    input.addEventListener("change", () => commitInspectorField(operation, input.value));
+    wrapper.append(caption, input);
+    transformGrid.append(wrapper);
+  }
+  card.append(transformGrid);
   els.inspector.append(card);
 }
 

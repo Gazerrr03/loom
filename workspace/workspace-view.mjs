@@ -18,6 +18,8 @@ const DEFAULT_BASIS = Object.freeze({
   yFromX: -0.2,
   yFromY: 0.66,
 });
+const VIEWPORT_CENTER = Object.freeze({ x: 550, y: 350 });
+const VIEW_ORIGIN = Object.freeze({ x: 82, y: 568 });
 
 function clone(value) {
   return structuredClone(value);
@@ -113,10 +115,21 @@ export function createWorkspaceView(initial = {}) {
     });
   }
 
-  function zoomBy(factor) {
+  function zoomBy(factor, { anchor = VIEWPORT_CENTER } = {}) {
     assertFinite(factor, "zoom factor");
     if (factor <= 0) throw new Error("zoom factor must be greater than zero");
-    return normalizeAndSet({ zoom: current.zoom * factor });
+    if (!anchor || typeof anchor !== "object") throw new Error("zoom anchor must be an object");
+    assertFinite(anchor.x, "zoom anchor.x");
+    assertFinite(anchor.y, "zoom anchor.y");
+    const nextZoom = clamp(current.zoom * factor, LIMITS.zoom);
+    const ratio = nextZoom / current.zoom;
+    return normalizeAndSet({
+      zoom: nextZoom,
+      pan: {
+        x: ratio * (VIEW_ORIGIN.x + current.pan.x - anchor.x) + anchor.x - VIEW_ORIGIN.x,
+        y: ratio * (VIEW_ORIGIN.y + current.pan.y - anchor.y) + anchor.y - VIEW_ORIGIN.y,
+      },
+    });
   }
 
   function orbitBy({ azimuthDeg = 0, elevationDeg = 0 } = {}) {
@@ -143,4 +156,4 @@ export function createWorkspaceView(initial = {}) {
   });
 }
 
-export { DEFAULT_VIEW, DEFAULT_BASIS, LIMITS };
+export { DEFAULT_VIEW, DEFAULT_BASIS, LIMITS, VIEWPORT_CENTER, VIEW_ORIGIN };

@@ -21,11 +21,13 @@ test("pan, zoom, and orbit update view state without sharing mutable snapshots",
   assert.deepEqual(panned.pan, { x: 42, y: -18 });
   const zoomed = view.zoomBy(1.4);
   assert.equal(zoomed.zoom, 1.4);
+  assert.ok(Math.abs(zoomed.pan.x + 128.4) < 1e-9);
+  assert.ok(Math.abs(zoomed.pan.y - 62) < 1e-9);
   const orbited = view.orbitBy({ azimuthDeg: 20, elevationDeg: -5 });
   assert.equal(orbited.azimuthDeg, 65);
   assert.equal(orbited.elevationDeg, DEFAULT_VIEW.elevationDeg - 5);
   panned.pan.x = 999;
-  assert.equal(view.getState().pan.x, 42);
+  assert.ok(Math.abs(view.getState().pan.x + 128.4) < 1e-9);
 });
 
 test("view values clamp to safe bounds and reject non-finite input", () => {

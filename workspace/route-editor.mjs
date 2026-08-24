@@ -8,6 +8,7 @@ import {
 import { mergeEffectiveLayout } from "../contracts/layout.mjs";
 
 const ID_PATTERN = /^[a-z][a-z0-9._-]*$/;
+const ROUTE_GRID_SIZE = 1;
 
 function clone(value) {
   return structuredClone(value);
@@ -59,6 +60,74 @@ function routeExists(artifact, edgeId) {
 
 function commandValue(points) {
   return { points: points.map((point) => ({ ...point })) };
+}
+
+function snap(value) {
+  return Math.round(value / ROUTE_GRID_SIZE) * ROUTE_GRID_SIZE;
+}
+
+function axisBetween(left, right) {
+  if (left.x === right.x) return "vertical";
+  if (left.y === right.y) return "horizontal";
+  return Math.abs(right.x - left.x) >= Math.abs(right.y - left.y) ? "horizontal" : "vertical";
+}
+
+/**
+ * Move one point while keeping the route on horizontal/vertical grid edges.
+ * Corner handles move the adjacent segment with them; endpoints slide along
+ * their only connected segment. Values are rounded to the Diagram grid.
+ */
+export function editRoutePoint(points, pointIndex, target) {
+  if (!Array.isArray(points) || points.length < 2) throw new Error("points must contain at least two points");
+  points.forEach((point, index) => assertPoint(point, `points[${index}]`));
+  assertPoint(target, "target");
+  const index = assertPointIndex(pointIndex, points.length);
+  const next = points.map((point) => ({ ...point }));
+  const current = next[index];
+  const desired = { x: snap(target.x), y: snap(target.y) };
+
+  if (index === 0) {
+    if (axisBetween(next[0], next[1]) === "horizontal") next[0].x = desired.x;
+    else next[0].y = desired.y;
+    return next;
+  }
+  if (index === next.length - 1) {
+    if (axisBetween(next[index - 1], next[index]) === "horizontal") next[index].x = desired.x;
+    else next[index].y = desired.y;
+    return next;
+  }
+
+  const incoming = axisBetween(next[index - 1], current);
+  const outgoing = axisBetween(current, next[index + 1]);
+  const moveX = Math.abs(desired.x - current.x) >= Math.abs(desired.y - current.y);
+  if (incoming === "horizontal" && outgoing === "vertical") {
+    if (moveX) {
+      next[index].x = desired.x;
+      next[index + 1].x = desired.x;
+    } else {
+      next[index].y = desired.y;
+      next[index - 1].y = desired.y;
+    }
+    return next;
+  }
+  if (incoming === "vertical" && outgoing === "horizontal") {
+    if (moveX) {
+      next[index].x = desired.x;
+      next[index - 1].x = desired.x;
+    } else {
+      next[index].y = desired.y;
+      next[index + 1].y = desired.y;
+    }
+    return next;
+  }
+  if (incoming === "horizontal") {
+    if (moveX) next[index].x = desired.x;
+    else [next[index - 1], next[index], next[index + 1]].forEach((point) => { point.y = desired.y; });
+  } else {
+    if (moveX) [next[index - 1], next[index], next[index + 1]].forEach((point) => { point.x = desired.x; });
+    else next[index].y = desired.y;
+  }
+  return next;
 }
 
 /**
@@ -130,8 +199,7 @@ export function createRouteEditor({ artifact, revision, gesturePrefix = "workspa
   function move({ diagramPoint } = {}) {
     if (!active) return { accepted: false, reason: "no-active-gesture", ...state() };
     assertPoint(diagramPoint, "diagramPoint");
-    const points = clone(active.points);
-    points[active.pointIndex] = { ...points[active.pointIndex], x: diagramPoint.x, y: diagramPoint.y };
+    const points = editRoutePoint(active.points, active.pointIndex, diagramPoint);
     active.preview = updatePreview(active.preview, commandValue(points));
     previewArtifact = applyDomainCommand(canonical, {
       type: "layout.route.replace-points",
@@ -181,3 +249,4 @@ export function createRouteEditor({ artifact, revision, gesturePrefix = "workspa
 }
 
 export { routePoints };
+export { ROUTE_GRID_SIZE };

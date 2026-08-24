@@ -19,6 +19,8 @@ import {
   viewBasis,
 } from "./workspace-view.mjs";
 import { createRouteEditor } from "./route-editor.mjs";
+import { createAnnotationEditor } from "./annotation-editor.mjs";
+import { resolveAnnotationAnchor } from "../contracts/anchors.mjs";
 
 const NS = "http://www.w3.org/2000/svg";
 const GOLDEN_CASE_URL = "../examples/flovvas-massing.diagram.json";
@@ -60,6 +62,7 @@ const state = {
   revision: null,
   selectedId: null,
   selectedEdgeId: null,
+  selectedAnnotationId: null,
   query: "",
   dirty: false,
   error: null,
@@ -79,6 +82,8 @@ const state = {
   viewPointer: null,
   routeEditor: null,
   activeRoutePointerId: null,
+  annotationEditor: null,
+  suppressAnnotationCommit: false,
 };
 
 els.canvas.style.touchAction = "none";
@@ -154,6 +159,8 @@ async function captureCurrentCanvas({ request, composition }) {
   // layers. The exported artifact remains the same Diagram revision.
   svgCopy.querySelectorAll(".workspace-node[aria-selected=\"true\"] polyline").forEach((line) => line.remove());
   svgCopy.querySelectorAll(".workspace-route-handle").forEach((handle) => handle.remove());
+  svgCopy.querySelectorAll(".workspace-annotation-selection").forEach((chrome) => chrome.remove());
+  svgCopy.querySelectorAll(".workspace-annotation-hit").forEach((hit) => hit.remove());
   svgCopy.querySelectorAll("#workspace-scene > rect").forEach((rect) => {
     const fill = rect.getAttribute("fill") ?? "";
     if (fill.includes("workspace-grid") || fill === "#d8c2ac") rect.remove();
@@ -243,6 +250,7 @@ function refreshArtifactControllers() {
   }
   state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
   state.routeEditor = createRouteEditor({ artifact: state.artifact, revision: state.revision });
+  state.annotationEditor = createAnnotationEditor({ artifact: state.artifact, revision: state.revision });
 }
 
 function project(point) {
@@ -411,6 +419,65 @@ function renderRouteHandles(parent, edge, route) {
   });
 }
 
+function annotationPoint(annotation, artifact) {
+  try {
+    return resolveAnnotationAnchor(annotation, artifact, effectiveLayout(artifact));
+  } catch (error) {
+    state.error = error instanceof Error ? error : new Error(String(error));
+    return null;
+  }
+}
+
+function renderAnnotation(parent, annotation, artifact) {
+  const anchor = annotationPoint(annotation, artifact);
+  if (!anchor) return;
+  const projected = project(anchor);
+  const selected = state.selectedAnnotationId === annotation.id;
+  const isTitle = annotation.visualRole === "title";
+  const offsetX = isTitle ? 22 : 8;
+  const offsetY = isTitle ? -14 : -8;
+  const group = svg("g", {
+    class: "workspace-annotation",
+    "data-annotation-id": annotation.id,
+    tabindex: "0",
+    role: "button",
+    "aria-label": `Annotation ${annotation.id}`,
+    "aria-selected": selected ? "true" : "false",
+  });
+  const hitWidth = Math.max(96, annotation.text.length * 7 + 18);
+  group.append(svg("rect", {
+    class: "workspace-annotation-hit",
+    x: isTitle ? projected.x + offsetX : projected.x - hitWidth / 2,
+    y: projected.y + offsetY - 13,
+    width: hitWidth,
+    height: 22,
+    fill: "transparent",
+    "pointer-events": "fill",
+  }));
+  if (selected) {
+    group.append(svg("circle", { class: "workspace-annotation-selection", cx: projected.x, cy: projected.y, r: 7, fill: "none", stroke: "#c66a43", "stroke-width": 1.5, "stroke-dasharray": "3 3" }));
+  }
+  const text = svg("text", {
+    x: projected.x + offsetX,
+    y: projected.y + offsetY,
+    "text-anchor": isTitle ? "start" : "middle",
+    fill: isTitle ? "#4d5a5d" : "#58656a",
+    "font-size": isTitle ? 12 : 9,
+    "font-weight": isTitle ? 700 : 600,
+    "font-family": isTitle ? "Georgia, serif" : "Inter, sans-serif",
+  });
+  text.textContent = annotation.text;
+  group.append(text);
+  group.addEventListener("click", (event) => { event.stopPropagation(); selectAnnotation(annotation.id); });
+  group.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      selectAnnotation(annotation.id);
+    }
+  });
+  parent.append(group);
+}
+
 function renderCanvas() {
   els.scene.replaceChildren();
   if (!state.artifact) {
@@ -444,12 +511,7 @@ function renderCanvas() {
     const route = layout.routes[edge.id];
     if (route?.points) renderRouteHandles(els.scene, edge, route);
   }
-  const title = displayArtifact.annotations?.find((annotation) => annotation.visualRole === "title");
-  if (title) {
-    const anchor = title.anchor?.position ?? { x: 22, y: 24 };
-    const projected = project(anchor);
-    label(els.scene, { x: projected.x + 22, y: projected.y - 14 }, title.text, "#4d5a5d");
-  }
+  for (const annotation of displayArtifact.annotations ?? []) renderAnnotation(els.scene, annotation, displayArtifact);
 }
 
 function fallbackComponentEntries() {
@@ -600,12 +662,109 @@ function renderComponents() {
 }
 
 function renderInspector() {
-  if (!state.artifact || (!state.selectedId && !state.selectedEdgeId)) {
+  if (!state.artifact || (!state.selectedId && !state.selectedEdgeId && !state.selectedAnnotationId)) {
     els.inspector.replaceChildren();
     const empty = document.createElement("p");
     empty.className = "inspector-empty";
-    empty.textContent = state.artifact ? "选择一个 Scene Node 或 Route 后，这里会显示它的语义身份和构图状态。" : "打开 Diagram 后，这里会显示选中对象的语义上下文。";
+    empty.textContent = state.artifact ? "选择一个 Scene Node、Route 或 Annotation 后，这里会显示它的语义身份和构图状态。" : "打开 Diagram 后，这里会显示选中对象的语义上下文。";
     els.inspector.append(empty);
+    return;
+  }
+  if (state.selectedAnnotationId) {
+    const annotation = selectedAnnotation();
+    if (!annotation) { state.selectedAnnotationId = null; renderInspector(); return; }
+    els.inspector.replaceChildren();
+    const card = document.createElement("div");
+    card.className = "inspector-card";
+    const eyebrow = document.createElement("p"); eyebrow.className = "inspector-label"; eyebrow.textContent = "annotation";
+    const title = document.createElement("h3"); title.className = "inspector-title"; title.textContent = annotation.id;
+    card.append(eyebrow, title);
+
+    const textField = document.createElement("div"); textField.className = "field";
+    const textLabel = document.createElement("label"); textLabel.textContent = "Text";
+    const textInput = document.createElement("textarea"); textInput.rows = 3; textInput.value = annotation.text; textInput.setAttribute("aria-label", "标注文本");
+    textInput.addEventListener("input", () => previewAnnotationPatch({ text: textInput.value }));
+    textInput.addEventListener("change", () => commitAnnotationField({ text: textInput.value }));
+    textField.append(textLabel, textInput);
+
+    const roleField = document.createElement("div"); roleField.className = "field";
+    const roleLabel = document.createElement("label"); roleLabel.textContent = "Visual role";
+    const roleInput = document.createElement("input"); roleInput.value = annotation.visualRole; roleInput.setAttribute("aria-label", "标注视觉角色");
+    roleInput.addEventListener("input", () => previewAnnotationPatch({ visualRole: roleInput.value }));
+    roleInput.addEventListener("change", () => commitAnnotationField({ visualRole: roleInput.value }));
+    roleField.append(roleLabel, roleInput);
+
+    const anchorField = document.createElement("div"); anchorField.className = "field";
+    const anchorLabel = document.createElement("label"); anchorLabel.textContent = "Anchor";
+    const kindSelect = document.createElement("select"); kindSelect.setAttribute("aria-label", "标注锚点类型");
+    for (const kind of ["canvas", "node", "edge", "group"]) {
+      const option = document.createElement("option"); option.value = kind; option.textContent = kind; kindSelect.append(option);
+    }
+    kindSelect.value = annotation.anchor.kind;
+    const targetWrap = document.createElement("div"); targetWrap.className = "field";
+    const targetLabel = document.createElement("label"); targetLabel.textContent = "Target";
+    const targetSelect = document.createElement("select"); targetSelect.setAttribute("aria-label", "标注目标");
+    targetWrap.append(targetLabel, targetSelect);
+    const xInput = document.createElement("input"); xInput.type = "number"; xInput.step = "1"; xInput.setAttribute("aria-label", "锚点 X");
+    const yInput = document.createElement("input"); yInput.type = "number"; yInput.step = "1"; yInput.setAttribute("aria-label", "锚点 Y");
+    const xLabel = document.createElement("label"); const yLabel = document.createElement("label");
+    const xWrap = document.createElement("div"); xWrap.className = "field"; xWrap.append(xLabel, xInput);
+    const yWrap = document.createElement("div"); yWrap.className = "field"; yWrap.append(yLabel, yInput);
+    const anchorGrid = document.createElement("div"); anchorGrid.className = "transform-grid";
+    anchorGrid.append(xWrap, yWrap);
+
+    function targetEntries(kind) {
+      if (kind === "node") return state.artifact.semantic.nodes;
+      if (kind === "edge") return state.artifact.semantic.edges;
+      if (kind === "group") return state.artifact.semantic.groups;
+      return [];
+    }
+    function refreshAnchorFields() {
+      const kind = kindSelect.value;
+      const entries = targetEntries(kind);
+      targetSelect.replaceChildren();
+      for (const entry of entries) {
+        const option = document.createElement("option"); option.value = entry.id; option.textContent = entry.id; targetSelect.append(option);
+      }
+      targetWrap.hidden = kind === "canvas";
+      targetSelect.value = kind === annotation.anchor.kind ? annotation.anchor.targetId ?? entries[0]?.id ?? "" : entries[0]?.id ?? "";
+      const point = kind === "canvas" ? annotation.anchor.position : annotation.anchor.offset ?? { x: 0, y: 0 };
+      xLabel.textContent = kind === "canvas" ? "Position X" : "Offset X";
+      yLabel.textContent = kind === "canvas" ? "Position Y" : "Offset Y";
+      xInput.value = String(point?.x ?? 0);
+      yInput.value = String(point?.y ?? 0);
+    }
+    function readAnchor() {
+      const kind = kindSelect.value;
+      const point = { x: Number(xInput.value), y: Number(yInput.value) };
+      return kind === "canvas" ? { kind, position: point } : { kind, targetId: targetSelect.value, offset: point };
+    }
+    function previewAnchor() { previewAnnotationPatch({ anchor: readAnchor() }); }
+    function commitAnchor() { commitAnnotationPatch({ anchor: readAnchor() }); }
+    refreshAnchorFields();
+    kindSelect.addEventListener("change", () => { refreshAnchorFields(); previewAnchor(); commitAnnotationField({ anchor: readAnchor() }); });
+    targetSelect.addEventListener("input", previewAnchor);
+    targetSelect.addEventListener("change", () => commitAnnotationField({ anchor: readAnchor() }));
+    for (const input of [xInput, yInput]) {
+      input.addEventListener("input", previewAnchor);
+      input.addEventListener("change", () => commitAnnotationField({ anchor: readAnchor() }));
+    }
+    anchorField.append(anchorLabel, kindSelect, targetWrap, anchorGrid);
+
+    const propertiesField = document.createElement("div"); propertiesField.className = "field";
+    const propertiesLabel = document.createElement("label"); propertiesLabel.textContent = "Properties JSON";
+    const propertiesInput = document.createElement("textarea"); propertiesInput.rows = 3; propertiesInput.value = JSON.stringify(annotation.properties ?? {}, null, 2); propertiesInput.setAttribute("aria-label", "标注 properties JSON");
+    function readProperties() {
+      const parsed = JSON.parse(propertiesInput.value);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("properties 必须是 JSON object");
+      return parsed;
+    }
+    propertiesInput.addEventListener("input", () => { try { previewAnnotationPatch({ properties: readProperties() }); } catch (error) { setStatus("error", "properties JSON 无效", error instanceof Error ? error : new Error(String(error))); } });
+    propertiesInput.addEventListener("change", () => { try { commitAnnotationField({ properties: readProperties() }); } catch (error) { setStatus("error", "properties JSON 无效", error instanceof Error ? error : new Error(String(error))); } });
+    propertiesField.append(propertiesLabel, propertiesInput);
+    const help = document.createElement("p"); help.className = "inspector-help"; help.textContent = state.previewArtifact ? "标注预览中 · 提交字段后写入一次 annotation.update" : "编辑文本、visualRole 或 anchor，离开字段时一次提交。";
+    card.append(textField, roleField, anchorField, propertiesField, help);
+    els.inspector.append(card);
     return;
   }
   if (state.selectedEdgeId) {
@@ -708,6 +867,7 @@ function setArtifact(artifact, fileName = "diagram.json") {
   state.revision = stableRevision(artifact);
   state.selectedId = null;
   state.selectedEdgeId = null;
+  state.selectedAnnotationId = null;
   state.dirty = false;
   state.previewArtifact = null;
   refreshArtifactControllers();
@@ -792,9 +952,11 @@ async function loadUrl(url, fileName = url.split("/").at(-1)) {
     state.revision = null;
     state.selectedId = null;
     state.selectedEdgeId = null;
+    state.selectedAnnotationId = null;
     state.previewArtifact = null;
     state.canvasController = null;
     state.routeEditor = null;
+    state.annotationEditor = null;
     state.activePointerId = null;
     state.activeRoutePointerId = null;
     state.dragging = false;
@@ -809,6 +971,7 @@ function selectNode(nodeId) {
   state.canvasController?.selectNode(nodeId);
   state.selectedId = nodeId;
   state.selectedEdgeId = null;
+  state.selectedAnnotationId = null;
   renderCanvas();
   renderComponents();
   renderInspector();
@@ -818,6 +981,69 @@ function selectRoute(edgeId) {
   if (!state.artifact || !state.artifact.semantic.edges.some((edge) => edge.id === edgeId)) return;
   state.selectedEdgeId = edgeId;
   state.selectedId = null;
+  state.selectedAnnotationId = null;
+  renderCanvas();
+  renderComponents();
+  renderInspector();
+}
+
+function selectedAnnotation() {
+  const displayArtifact = state.previewArtifact ?? state.artifact;
+  return displayArtifact?.annotations?.find((annotation) => annotation.id === state.selectedAnnotationId) ?? null;
+}
+
+function beginAnnotationEdit() {
+  if (!state.annotationEditor || !state.selectedAnnotationId) return false;
+  if (!state.annotationEditor.getState().active) {
+    const result = state.annotationEditor.begin({ annotationId: state.selectedAnnotationId });
+    if (!result.accepted) return false;
+  }
+  return true;
+}
+
+function previewAnnotationPatch(patch) {
+  if (!state.artifact || !state.selectedAnnotationId || !beginAnnotationEdit()) return;
+  try {
+    const result = state.annotationEditor.preview({ patch });
+    state.previewArtifact = result.artifact;
+    setStatus("ready", "标注预览中 · 提交字段后写入一次 Override");
+    renderCanvas();
+  } catch (error) {
+    setStatus("error", "标注预览失败", error instanceof Error ? error : new Error(String(error)));
+  }
+}
+
+function commitAnnotationPatch(patch) {
+  if (!state.artifact || !state.selectedAnnotationId || !beginAnnotationEdit()) return;
+  try {
+    const result = state.annotationEditor.commit({ patch });
+    if (!result.command) return;
+    state.artifact = result.artifact;
+    state.previewArtifact = null;
+    state.dirty = true;
+    state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+    state.routeEditor = createRouteEditor({ artifact: state.artifact, revision: state.revision });
+    setStatus("dirty", "已提交 1 个 annotation.update Human Override");
+    render();
+  } catch (error) {
+    state.previewArtifact = null;
+    setStatus("error", "标注提交失败", error instanceof Error ? error : new Error(String(error)));
+    render();
+  }
+}
+
+function commitAnnotationField(patch) {
+  if (state.suppressAnnotationCommit) return;
+  commitAnnotationPatch(patch);
+}
+
+function selectAnnotation(annotationId) {
+  if (!state.artifact?.annotations?.some((annotation) => annotation.id === annotationId)) return;
+  if (state.annotationEditor?.getState().active) state.annotationEditor.cancel();
+  state.previewArtifact = null;
+  state.selectedAnnotationId = annotationId;
+  state.selectedId = null;
+  state.selectedEdgeId = null;
   renderCanvas();
   renderComponents();
   renderInspector();
@@ -834,6 +1060,7 @@ function handleFile(file) {
       state.previewArtifact = null;
       state.canvasController = null;
       state.routeEditor = null;
+      state.annotationEditor = null;
       state.activePointerId = null;
       state.activeRoutePointerId = null;
       state.dragging = false;
@@ -847,6 +1074,7 @@ function handleFile(file) {
     state.previewArtifact = null;
     state.canvasController = null;
     state.routeEditor = null;
+    state.annotationEditor = null;
     state.activePointerId = null;
     state.activeRoutePointerId = null;
     state.dragging = false;
@@ -908,6 +1136,11 @@ function nodeIdFromEvent(event) {
   return target?.dataset?.nodeId ?? null;
 }
 
+function annotationIdFromEvent(event) {
+  const target = event.target?.closest?.("[data-annotation-id]");
+  return target?.dataset?.annotationId ?? null;
+}
+
 function routeHandleFromEvent(event) {
   const target = event.target?.closest?.("[data-route-edge-id][data-route-index]");
   if (!target) return null;
@@ -957,6 +1190,10 @@ function handlePointerDown(event) {
   if (!state.artifact || !state.canvasController || event.button !== 0) return;
   const routeHandle = routeHandleFromEvent(event);
   if (routeHandle && startRoutePointer(event, routeHandle)) return;
+  if (annotationIdFromEvent(event) || event.target?.closest?.(".workspace-route-hit")) {
+    event.preventDefault();
+    return;
+  }
   const nodeId = nodeIdFromEvent(event);
   if (!nodeId) {
     try { startViewPointer(event); }
@@ -1062,6 +1299,7 @@ function finishPointer(event, cancelled = false) {
         state.dirty = true;
         state.previewArtifact = null;
         state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+        state.annotationEditor = createAnnotationEditor({ artifact: state.artifact, revision: state.revision });
         setStatus("dirty", "已提交 1 个路线字段级 Human Override");
       } else {
         state.previewArtifact = null;
@@ -1144,6 +1382,16 @@ function handleKeyDown(event) {
     event.preventDefault();
     return;
   }
+  if (state.annotationEditor?.getState().active) {
+    state.suppressAnnotationCommit = true;
+    state.annotationEditor.cancel();
+    state.previewArtifact = null;
+    setStatus("ready", "已取消标注预览");
+    render();
+    setTimeout(() => { state.suppressAnnotationCommit = false; }, 0);
+    event.preventDefault();
+    return;
+  }
   if (state.activeRoutePointerId !== null && state.routeEditor) {
     finishPointer({ pointerId: state.activeRoutePointerId, preventDefault: () => {} }, true);
     event.preventDefault();
@@ -1182,6 +1430,7 @@ els.scene.addEventListener("click", () => {
   if (state.dragging) return;
   state.selectedId = null;
   state.selectedEdgeId = null;
+  state.selectedAnnotationId = null;
   renderCanvas();
   renderComponents();
   renderInspector();
@@ -1192,6 +1441,7 @@ window.LoomWorkspace = Object.freeze({
   getState: () => clone(state),
   getCanvasState: () => state.canvasController?.getState() ?? null,
   getRouteState: () => state.routeEditor?.getState() ?? null,
+  getAnnotationState: () => state.annotationEditor?.getState() ?? null,
   getViewState: () => state.viewController.getState(),
   loadArtifact: (artifact, fileName) => setArtifact(artifact, fileName),
   loadUrl,

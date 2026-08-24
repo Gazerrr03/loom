@@ -14,6 +14,7 @@ const ID_PATTERN = /^[a-z][a-z0-9._-]*$/;
 const ACTIVE = "active";
 const COMMAND_TYPES = new Set([
   "layout.node.move",
+  "layout.node.elevation",
   "layout.node.rotate-y",
   "layout.node.scale",
   "layout.node.z-index",
@@ -61,6 +62,10 @@ function assertPreviewValue(type, value, path = "preview.value") {
   if (type === "layout.node.move") {
     assertFiniteNumber(value.x, `${path}.x`);
     assertFiniteNumber(value.y, `${path}.y`);
+    return;
+  }
+  if (type === "layout.node.elevation") {
+    assertFiniteNumber(value.elevation, `${path}.elevation`);
     return;
   }
   if (type === "layout.node.rotate-y") {
@@ -171,6 +176,8 @@ function assertCommand(command) {
   assertId(command.gestureId, "command.gestureId");
   const fields = command.type === "layout.node.move"
     ? ["x", "y"]
+    : command.type === "layout.node.elevation"
+      ? ["elevation"]
     : command.type === "layout.node.rotate-y"
       ? ["rotationYDeg"]
       : command.type === "layout.node.scale"
@@ -216,6 +223,11 @@ export function applyDomainCommand(artifact, command) {
       ...(next.layout.overrides.nodes[command.targetId] ?? {}),
       x: command.x,
       y: command.y,
+    };
+  } else if (command.type === "layout.node.elevation") {
+    next.layout.overrides.nodes[command.targetId] = {
+      ...(next.layout.overrides.nodes[command.targetId] ?? {}),
+      elevation: command.elevation,
     };
   } else if (command.type === "layout.node.rotate-y") {
     next.layout.overrides.nodes[command.targetId] = {

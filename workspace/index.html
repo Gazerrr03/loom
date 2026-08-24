@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Loom · Workspace</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #24313a;
+      --muted: #71808a;
+      --line: #d9d3c9;
+      --paper: #f5f2eb;
+      --panel: #fffdf9;
+      --canvas: #faf8f2;
+      --accent: #c66a43;
+      --accent-soft: #f2e1d6;
+      --green: #4f8a73;
+      --violet: #7467a8;
+      --shadow: 0 22px 60px rgba(63, 54, 43, .12);
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body { margin: 0; color: var(--ink); background: var(--paper); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; }
+    button, input { font: inherit; }
+    button { border: 1px solid var(--line); border-radius: 9px; padding: 8px 11px; color: var(--ink); background: var(--panel); cursor: pointer; font-size: 12px; font-weight: 650; }
+    button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    button:disabled { cursor: not-allowed; opacity: .42; }
+    .app { display: grid; grid-template-rows: auto 1fr; min-height: 100vh; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 20px; border-bottom: 1px solid var(--line); background: rgba(255,253,249,.92); }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid #d4a083; border-radius: 9px; color: var(--accent); background: var(--accent-soft); font-family: Georgia, serif; font-weight: 700; }
+    .brand-copy { min-width: 0; }
+    .eyebrow { margin: 0 0 3px; color: var(--accent); font: 700 10px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .13em; text-transform: uppercase; }
+    .file-title { overflow: hidden; margin: 0; text-overflow: ellipsis; white-space: nowrap; font: 650 15px/1.2 Georgia, "Songti SC", serif; }
+    .toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
+    .toolbar .primary { border-color: var(--accent); color: #fffaf4; background: var(--accent); }
+    .toolbar .primary:hover:not(:disabled) { color: #fff; background: #b95d39; }
+    .status { display: inline-flex; align-items: center; gap: 7px; margin-left: 4px; padding: 7px 10px; border-radius: 999px; color: var(--muted); background: #f2f0ea; font: 600 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .status[data-status="loading"]::before { background: var(--accent); }
+    .status[data-status="error"]::before { background: #b64b4b; }
+    .workspace { display: grid; grid-template-columns: 238px minmax(520px, 1fr) 260px; gap: 12px; min-height: 0; padding: 12px; }
+    .panel, .canvas-card { overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); box-shadow: var(--shadow); }
+    .panel { display: flex; flex-direction: column; min-height: 0; }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 15px 15px 12px; border-bottom: 1px solid var(--line); }
+    .panel-head h2 { margin: 0; font: 650 13px/1.2 Georgia, "Songti SC", serif; }
+    .panel-head small { color: var(--muted); font: 10px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .panel-body { min-height: 0; padding: 12px; overflow: auto; }
+    .search { width: 100%; margin-bottom: 10px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; outline: 0; color: var(--ink); background: #fbfaf6; font-size: 12px; }
+    .search:focus { border-color: #ca8a69; box-shadow: 0 0 0 3px rgba(198,106,67,.11); }
+    .component-list { display: grid; gap: 7px; }
+    .component { display: grid; grid-template-columns: 28px 1fr; gap: 9px; align-items: center; width: 100%; padding: 8px; border: 1px solid transparent; border-radius: 9px; text-align: left; background: transparent; }
+    .component:hover { border-color: var(--line); background: #fbfaf6; }
+    .component[aria-current="true"] { border-color: #dbb29a; background: var(--accent-soft); }
+    .component-swatch { width: 28px; height: 24px; border: 1px solid rgba(36,49,58,.2); border-radius: 6px; background: linear-gradient(145deg, #d6c09e 0 30%, #8c6e5c 31% 75%, #3d4b53 76%); transform: skewY(-8deg); }
+    .component-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 650; }
+    .component-meta { margin-top: 2px; color: var(--muted); font: 10px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .canvas-card { display: grid; grid-template-rows: auto 1fr auto; min-height: 0; }
+    .canvas-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 15px; border-bottom: 1px solid var(--line); }
+    .canvas-head strong { font: 650 13px/1.2 Georgia, "Songti SC", serif; }
+    .canvas-head span { color: var(--muted); font: 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .canvas-wrap { min-height: 0; padding: 12px; background: #f1eee7; }
+    #workspace-canvas { display: block; width: 100%; height: 100%; min-height: 520px; border: 1px solid #d8d1c5; border-radius: 10px; background: var(--canvas); cursor: default; }
+    .canvas-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 15px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .canvas-foot kbd { padding: 2px 5px; border: 1px solid var(--line); border-radius: 4px; background: #f7f3ec; font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .inspector-empty { color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .inspector-card { display: grid; gap: 12px; }
+    .inspector-label { margin: 0; color: var(--accent); font: 700 10px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .1em; text-transform: uppercase; }
+    .inspector-title { margin: 0; font: 650 23px/1.1 Georgia, "Songti SC", serif; }
+    .field { display: grid; gap: 4px; }
+    .field label { color: var(--muted); font-size: 10px; }
+    .field code, .revision { overflow-wrap: anywhere; padding: 7px 8px; border-radius: 7px; background: #f5f1e9; color: #52616a; font: 10px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .notice { margin-top: 12px; padding: 9px 10px; border: 1px solid #e5c7b6; border-radius: 8px; color: #8d543b; background: #fcf0e8; font-size: 11px; line-height: 1.45; }
+    .notice[hidden] { display: none; }
+    .legend { display: flex; gap: 12px; flex-wrap: wrap; }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #6687a4; }
+    .dot.alt { background: #aaa49a; }
+    .dot.input { background: var(--accent); }
+    @media (max-width: 1080px) { .workspace { grid-template-columns: 205px minmax(460px, 1fr); } .inspector-panel { display: none; } }
+    @media (max-width: 760px) { .topbar { align-items: flex-start; flex-direction: column; } .toolbar { justify-content: flex-start; } .workspace { display: block; } .panel, .canvas-card { margin-bottom: 12px; } .library-panel { min-height: 230px; } #workspace-canvas { min-height: 440px; } }
+  </style>
+</head>
+<body>
+  <div class="app" id="loom-workspace" data-status="idle">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">L</div>
+        <div class="brand-copy">
+          <p class="eyebrow">Loom / Workspace</p>
+          <h1 class="file-title" id="file-title">未打开 Diagram</h1>
+        </div>
+      </div>
+      <div class="toolbar" aria-label="Workspace actions">
+        <button id="open-button" type="button">打开 Diagram</button>
+        <button id="load-golden-button" type="button">载入 Golden Case</button>
+        <button id="save-button" type="button" disabled>保存</button>
+        <button id="undo-button" type="button" disabled>Undo</button>
+        <button id="redo-button" type="button" disabled>Redo</button>
+        <button id="export-button" class="primary" type="button" disabled>Export PNG</button>
+        <span class="status" id="workspace-status" data-status="idle">idle · 等待 Diagram</span>
+      </div>
+      <input id="file-input" type="file" accept=".json,.diagram.json,application/json" hidden>
+    </header>
+
+    <main class="workspace">
+      <aside class="panel library-panel" aria-labelledby="component-heading">
+        <div class="panel-head"><div><h2 id="component-heading">COMPONENTS</h2><small id="component-count">等待加载</small></div><span aria-hidden="true">⌘K</span></div>
+        <div class="panel-body">
+          <input id="component-search" class="search" type="search" placeholder="按名称或语义搜索" aria-label="搜索组件">
+          <div id="component-list" class="component-list" aria-live="polite"></div>
+          <div class="notice" id="library-notice" hidden></div>
+        </div>
+      </aside>
+
+      <section class="canvas-card" aria-labelledby="canvas-heading">
+        <div class="canvas-head"><strong id="canvas-heading">Isometric Canvas</strong><span id="canvas-meta">未加载 RenderDocument</span></div>
+        <div class="canvas-wrap">
+          <svg id="workspace-canvas" viewBox="0 0 1100 700" role="img" aria-labelledby="canvas-title canvas-description">
+            <title id="canvas-title">Loom Workspace Canvas</title>
+            <desc id="canvas-description">等轴流程图画布，显示阶段、路线、阶段区和标注。</desc>
+            <defs>
+              <pattern id="workspace-grid" width="28" height="28" patternUnits="userSpaceOnUse" patternTransform="skewY(-16)"><path d="M28 0H0V28" fill="none" stroke="#e5ded2" stroke-width="1"/></pattern>
+              <filter id="workspace-shadow" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#594b3b" flood-opacity=".17"/></filter>
+              <marker id="workspace-arrow" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto"><path d="M0 0L8 3.5L0 7Z" fill="#58748b"/></marker>
+            </defs>
+            <g id="workspace-scene"></g>
+          </svg>
+        </div>
+        <div class="canvas-foot"><div class="legend"><span><i class="dot"></i>主路径</span><span><i class="dot alt"></i>替代路径</span><span><i class="dot input"></i>外部输入</span></div><span><kbd>Click</kbd> 选择 · <kbd>Drag</kbd> 交互将在下一原子 Issue 接入</span></div>
+      </section>
+
+      <aside class="panel inspector-panel" aria-labelledby="inspector-heading">
+        <div class="panel-head"><div><h2 id="inspector-heading">INSPECTOR</h2><small>stable semantic context</small></div></div>
+        <div class="panel-body" id="inspector-body"><p class="inspector-empty">选择一个 Scene Node 后，这里会显示它的语义身份、组件引用和构图状态。</p></div>
+      </aside>
+    </main>
+  </div>
+  <script type="module" src="./workspace-app.mjs"></script>
+</body>
+</html>

@@ -1,3 +1,5 @@
+import { createIsometricTransform, createWorkspaceCanvas } from "./workspace-canvas.mjs";
+
 const NS = "http://www.w3.org/2000/svg";
 const GOLDEN_CASE_URL = "../examples/flovvas-massing.diagram.json";
 const STAGE_COLORS = ["#6687a4", "#7a9b91", "#ad8c69", "#8b7baa", "#b27668", "#738e87", "#c17a4e"];
@@ -6,6 +8,7 @@ const els = {
   title: document.getElementById("file-title"),
   status: document.getElementById("workspace-status"),
   canvasMeta: document.getElementById("canvas-meta"),
+  canvas: document.getElementById("workspace-canvas"),
   scene: document.getElementById("workspace-scene"),
   componentList: document.getElementById("component-list"),
   componentCount: document.getElementById("component-count"),
@@ -19,6 +22,7 @@ const els = {
   undoButton: document.getElementById("undo-button"),
   redoButton: document.getElementById("redo-button"),
   exportButton: document.getElementById("export-button"),
+  dragHint: document.querySelector(".canvas-foot > span"),
 };
 
 const state = {
@@ -30,7 +34,17 @@ const state = {
   query: "",
   dirty: false,
   error: null,
+  previewArtifact: null,
+  canvasController: null,
+  activePointerId: null,
+  dragging: false,
+  moved: false,
+  suppressClick: false,
 };
+
+els.canvas.style.touchAction = "none";
+els.canvas.style.userSelect = "none";
+els.dragHint.textContent = "Click 选择 · Drag 可预览，松手后提交一次修改";
 
 function clone(value) {
   return structuredClone(value);
@@ -169,28 +183,29 @@ function renderCanvas() {
     els.scene.append(empty);
     return;
   }
-  const layout = effectiveLayout(state.artifact);
+  const displayArtifact = state.previewArtifact ?? state.artifact;
+  const layout = effectiveLayout(displayArtifact);
   const canvas = svg("rect", { x: 0, y: 0, width: 1100, height: 700, fill: "#faf8f2" });
   const grid = svg("rect", { x: 0, y: 0, width: 1100, height: 700, fill: "url(#workspace-grid)", opacity: .72 });
   const gutter = svg("rect", { x: 510, y: 0, width: 22, height: 700, fill: "#d8c2ac", opacity: .13 });
   els.scene.append(canvas, grid, gutter);
-  for (const group of state.artifact.semantic.groups) {
+  for (const group of displayArtifact.semantic.groups) {
     const bounds = layout.groups[group.id]?.bounds;
     if (!bounds) continue;
     const points = surfacePoints(bounds, 0).map((point) => `${point.x},${point.y}`).join(" ");
     const zone = svg("polygon", { points, fill: "none", stroke: "#bdb6aa", "stroke-width": 1, "stroke-dasharray": "5 5", opacity: .72 });
     els.scene.append(zone);
   }
-  for (const edge of state.artifact.semantic.edges) {
+  for (const edge of displayArtifact.semantic.edges) {
     const route = layout.routes[edge.id];
     if (!route?.points) continue;
     const line = svg("polyline", { points: pointString(route.points), fill: "none", stroke: edge.visualRole === "alternative" ? "#aaa49a" : edge.visualRole === "compounding-loop" ? "#7467a8" : edge.visualRole === "external-input" ? "#c66a43" : "#58748b", "stroke-width": edge.visualRole === "main-flow" ? 2 : 1.2, "stroke-dasharray": edge.visualRole === "alternative" ? "5 5" : "", "marker-end": "url(#workspace-arrow)", opacity: .82 });
     els.scene.append(line);
   }
-  [...state.artifact.semantic.nodes].sort((left, right) => (layout.nodes[left.id]?.zIndex ?? 0) - (layout.nodes[right.id]?.zIndex ?? 0)).forEach((node, index) => {
+  [...displayArtifact.semantic.nodes].sort((left, right) => (layout.nodes[left.id]?.zIndex ?? 0) - (layout.nodes[right.id]?.zIndex ?? 0)).forEach((node, index) => {
     if (layout.nodes[node.id]) renderNode(els.scene, node, layout.nodes[node.id], index);
   });
-  const title = state.artifact.annotations?.find((annotation) => annotation.visualRole === "title");
+  const title = displayArtifact.annotations?.find((annotation) => annotation.visualRole === "title");
   if (title) {
     const anchor = title.anchor?.position ?? { x: 22, y: 24 };
     const projected = project(anchor);
@@ -247,16 +262,17 @@ function renderInspector() {
     els.inspector.append(empty);
     return;
   }
-  const node = state.artifact.semantic.nodes.find((candidate) => candidate.id === state.selectedId);
+  const displayArtifact = state.previewArtifact ?? state.artifact;
+  const node = displayArtifact.semantic.nodes.find((candidate) => candidate.id === state.selectedId);
   if (!node) { state.selectedId = null; renderInspector(); return; }
-  const layout = effectiveLayout(state.artifact).nodes[node.id] ?? {};
+  const layout = effectiveLayout(displayArtifact).nodes[node.id] ?? {};
   els.inspector.replaceChildren();
   const card = document.createElement("div");
   card.className = "inspector-card";
   const eyebrow = document.createElement("p"); eyebrow.className = "inspector-label"; eyebrow.textContent = node.type ?? "scene node";
   const title = document.createElement("h3"); title.className = "inspector-title"; title.textContent = node.label;
   card.append(eyebrow, title);
-  const fields = [["Stable ID", node.id], ["Component", node.componentRef], ["Phase", node.phase ?? "—"], ["Position", `${layout.x ?? "—"}, ${layout.y ?? "—"} · elevation ${layout.elevation ?? 0}`], ["Status", state.dirty ? "draft / dirty" : "ready / canonical"]];
+  const fields = [["Stable ID", node.id], ["Component", node.componentRef], ["Phase", node.phase ?? "—"], ["Position", `${layout.x ?? "—"}, ${layout.y ?? "—"} · elevation ${layout.elevation ?? 0}`], ["Status", state.previewArtifact ? "preview / not committed" : state.dirty ? "draft / dirty" : "ready / canonical"]];
   for (const [name, value] of fields) {
     const wrapper = document.createElement("div"); wrapper.className = "field";
     const caption = document.createElement("label"); caption.textContent = name;
@@ -269,8 +285,9 @@ function renderInspector() {
 function renderMeta() {
   els.title.textContent = state.fileName ?? "未打开 Diagram";
   els.canvasMeta.textContent = state.artifact ? `${state.artifact.semantic.nodes.length} nodes · ${state.artifact.semantic.edges.length} routes · ${state.revision}` : "未加载 RenderDocument";
-  els.saveButton.disabled = !state.artifact || !state.dirty;
-  els.exportButton.disabled = !state.artifact;
+  // Save and PNG become actionable in the dedicated #111 exit issue.
+  els.saveButton.disabled = true;
+  els.exportButton.disabled = true;
 }
 
 function render() {
@@ -287,6 +304,11 @@ function setArtifact(artifact, fileName = "diagram.json") {
   state.revision = stableRevision(artifact);
   state.selectedId = null;
   state.dirty = false;
+  state.previewArtifact = null;
+  state.canvasController = createWorkspaceCanvas({ artifact: state.artifact, revision: state.revision });
+  state.activePointerId = null;
+  state.dragging = false;
+  state.moved = false;
   setStatus("ready", "Diagram 已加载");
   render();
 }
@@ -302,6 +324,11 @@ async function loadUrl(url, fileName = url.split("/").at(-1)) {
     state.fileName = null;
     state.revision = null;
     state.selectedId = null;
+    state.previewArtifact = null;
+    state.canvasController = null;
+    state.activePointerId = null;
+    state.dragging = false;
+    state.moved = false;
     setStatus("error", "读取失败", error instanceof Error ? error : new Error(String(error)));
     render();
   }
@@ -309,6 +336,7 @@ async function loadUrl(url, fileName = url.split("/").at(-1)) {
 
 function selectNode(nodeId) {
   if (!state.artifact || !state.artifact.semantic.nodes.some((node) => node.id === nodeId)) return;
+  state.canvasController?.selectNode(nodeId);
   state.selectedId = nodeId;
   renderCanvas();
   renderComponents();
@@ -321,20 +349,150 @@ function handleFile(file) {
   const reader = new FileReader();
   reader.addEventListener("load", () => {
     try { setArtifact(JSON.parse(String(reader.result)), file.name); }
-    catch (error) { state.artifact = null; setStatus("error", "文件无效", error instanceof Error ? error : new Error(String(error))); render(); }
+    catch (error) {
+      state.artifact = null;
+      state.previewArtifact = null;
+      state.canvasController = null;
+      state.activePointerId = null;
+      state.dragging = false;
+      state.moved = false;
+      setStatus("error", "文件无效", error instanceof Error ? error : new Error(String(error)));
+      render();
+    }
   });
-  reader.addEventListener("error", () => { state.artifact = null; setStatus("error", "文件读取失败", new Error("无法读取本地文件")); render(); });
+  reader.addEventListener("error", () => {
+    state.artifact = null;
+    state.previewArtifact = null;
+    state.canvasController = null;
+    state.activePointerId = null;
+    state.dragging = false;
+    state.moved = false;
+    setStatus("error", "文件读取失败", new Error("无法读取本地文件"));
+    render();
+  });
   reader.readAsText(file);
+}
+
+function viewBoxPoint(event) {
+  const bounds = els.canvas.getBoundingClientRect();
+  if (bounds.width === 0 || bounds.height === 0) throw new Error("Canvas viewport is not measurable");
+  return {
+    x: (event.clientX - bounds.left) * 1100 / bounds.width,
+    y: (event.clientY - bounds.top) * 700 / bounds.height,
+  };
+}
+
+function diagramPointFromEvent(event, nodeId) {
+  const layout = effectiveLayout(state.artifact).nodes[nodeId] ?? {};
+  const transform = createIsometricTransform();
+  return transform.screenToDiagram(viewBoxPoint(event), { z: layout.elevation ?? 0 });
+}
+
+function nodeIdFromEvent(event) {
+  const target = event.target?.closest?.("[data-node-id]");
+  return target?.dataset?.nodeId ?? null;
+}
+
+function handlePointerDown(event) {
+  if (!state.artifact || !state.canvasController || event.button !== 0) return;
+  const nodeId = nodeIdFromEvent(event);
+  if (!nodeId) return;
+  try {
+    const result = state.canvasController.pointerDown({
+      nodeId,
+      pointerId: event.pointerId,
+      diagramPoint: diagramPointFromEvent(event, nodeId),
+    });
+    if (!result.accepted) return;
+    state.selectedId = nodeId;
+    state.activePointerId = event.pointerId;
+    state.dragging = false;
+    state.moved = false;
+    els.canvas.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  } catch (error) {
+    setStatus("error", "拖动未开始", error instanceof Error ? error : new Error(String(error)));
+  }
+}
+
+function handlePointerMove(event) {
+  if (state.activePointerId !== event.pointerId || !state.canvasController) return;
+  const active = state.canvasController.getState().active;
+  if (!active) return;
+  try {
+    const result = state.canvasController.pointerMove({ diagramPoint: diagramPointFromEvent(event, active.nodeId) });
+    if (!result.accepted) return;
+    state.previewArtifact = state.canvasController.getDisplayArtifact();
+    state.dragging = true;
+    state.moved = true;
+    setStatus("ready", "预览中 · 松手提交一次修改");
+    renderCanvas();
+    renderInspector();
+    event.preventDefault();
+  } catch (error) {
+    setStatus("error", "拖动预览失败", error instanceof Error ? error : new Error(String(error)));
+  }
+}
+
+function finishPointer(event, cancelled = false) {
+  if (state.activePointerId !== event.pointerId || !state.canvasController) return;
+  const active = state.canvasController.getState().active;
+  let result;
+  try {
+    if (cancelled) result = state.canvasController.cancel();
+    else result = state.canvasController.pointerUp({
+      diagramPoint: state.moved && active ? diagramPointFromEvent(event, active.nodeId) : undefined,
+    });
+    if (result.command) {
+      state.artifact = result.artifact;
+      state.dirty = true;
+      state.previewArtifact = null;
+      setStatus("dirty", "已提交 1 个字段级 Human Override");
+    } else {
+      state.previewArtifact = null;
+      setStatus("ready", cancelled ? "已取消拖动预览" : "未移动 · 未提交修改");
+    }
+  } catch (error) {
+    state.previewArtifact = null;
+    setStatus("error", "拖动提交失败", error instanceof Error ? error : new Error(String(error)));
+  }
+  state.suppressClick = state.moved;
+  state.activePointerId = null;
+  state.dragging = false;
+  state.moved = false;
+  els.canvas.releasePointerCapture?.(event.pointerId);
+  render();
+  event.preventDefault();
+}
+
+function handleKeyDown(event) {
+  if (event.key !== "Escape" || state.activePointerId === null || !state.canvasController) return;
+  const active = state.canvasController.getState().active;
+  if (active) finishPointer({ pointerId: state.activePointerId, preventDefault: () => {} }, true);
+  event.preventDefault();
 }
 
 els.openButton.addEventListener("click", () => els.fileInput.click());
 els.fileInput.addEventListener("change", () => handleFile(els.fileInput.files?.[0]));
 els.loadGoldenButton.addEventListener("click", () => loadUrl(GOLDEN_CASE_URL, "flovvas-massing.diagram.json"));
 els.componentSearch.addEventListener("input", (event) => { state.query = event.target.value; renderComponents(); });
-els.scene.addEventListener("click", () => { state.selectedId = null; renderCanvas(); renderComponents(); renderInspector(); });
+els.canvas.addEventListener("pointerdown", handlePointerDown);
+els.canvas.addEventListener("pointermove", handlePointerMove);
+els.canvas.addEventListener("pointerup", (event) => finishPointer(event));
+els.canvas.addEventListener("pointercancel", (event) => finishPointer(event, true));
+els.scene.addEventListener("click", () => {
+  if (state.suppressClick) { state.suppressClick = false; return; }
+  if (state.dragging) return;
+  state.selectedId = null;
+  renderCanvas();
+  renderComponents();
+  renderInspector();
+});
+window.addEventListener("keydown", handleKeyDown);
 
 window.LoomWorkspace = Object.freeze({
   getState: () => clone(state),
+  getCanvasState: () => state.canvasController?.getState() ?? null,
   loadArtifact: (artifact, fileName) => setArtifact(artifact, fileName),
   loadUrl,
   selectNode,

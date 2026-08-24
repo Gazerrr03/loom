@@ -1,0 +1,26 @@
+{
+  "format": "loom.icraft-scene-mapping",
+  "version": "0.1",
+  "sceneId": "icraft-aws-cloud",
+  "adapterId": "icraft-player",
+  "sceneRevision": "synthetic-contract-fixture-v1",
+  "coordinateSpace": "diagram",
+  "fixtureStatus": "synthetic-contract-only",
+  "nodes": [
+    { "elementKey": "fixture-stage-line", "nodeId": "stage-line", "componentRef": "flovvas-line" },
+    { "elementKey": "fixture-stage-branch", "nodeId": "stage-branch", "componentRef": "flovvas-branch" },
+    { "elementKey": "fixture-stage-card", "nodeId": "stage-card", "componentRef": "flovvas-card" },
+    { "elementKey": "fixture-stage-field", "nodeId": "stage-field", "componentRef": "flovvas-field" },
+    { "elementKey": "fixture-stage-archive", "nodeId": "stage-archive", "componentRef": "flovvas-archive" },
+    { "elementKey": "fixture-stage-context", "nodeId": "stage-context", "componentRef": "flovvas-context" },
+    { "elementKey": "fixture-stage-workbench", "nodeId": "stage-workbench", "componentRef": "flovvas-workbench" },
+    { "elementKey": "fixture-alt-chat-only", "nodeId": "alt-chat-only", "componentRef": "generic-card-slab" },
+    { "elementKey": "fixture-alt-board-only", "nodeId": "alt-board-only", "componentRef": "generic-card-slab" },
+    { "elementKey": "fixture-alt-storage-only", "nodeId": "alt-storage-only", "componentRef": "generic-card-slab" },
+    { "elementKey": "fixture-input-human-intent", "nodeId": "input-human-intent", "componentRef": "generic-input-plinth" },
+    { "elementKey": "fixture-input-agent-output", "nodeId": "input-agent-output", "componentRef": "generic-input-plinth" },
+    { "elementKey": "fixture-input-files", "nodeId": "input-files", "componentRef": "generic-input-plinth" },
+    { "elementKey": "fixture-input-links", "nodeId": "input-links", "componentRef": "generic-input-plinth" },
+    { "elementKey": "fixture-input-prior-context", "nodeId": "input-prior-context", "componentRef": "generic-input-plinth" }
+  ]
+}

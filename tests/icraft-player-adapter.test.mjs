@@ -156,6 +156,23 @@ test("capability gaps fail before Player construction and runtime load failures 
   assert.match(failed.error.cause, /network unavailable/);
 });
 
+test("a loading Player cannot leave the adapter pending forever", async () => {
+  const catalog = await readCatalog();
+  const renderHost = host();
+  const adapter = createIcraftPlayerAdapter({
+    catalog,
+    playerFactory: () => new Promise(() => {}),
+  });
+  await adapter.mount(renderHost);
+
+  const result = await adapter.load(renderDocument(), { sceneId: "icraft-aws-cloud", timeoutMs: 5 });
+
+  assert.equal(result.status, "fallback");
+  assert.equal(result.error.code, "render-failed");
+  assert.match(result.error.cause, /timed out after 5 ms/);
+  assert.equal(adapter.getState().state, "fallback");
+});
+
 test("reloading disposes the old Player and never leaves the previous scene session active", async () => {
   const catalog = await readCatalog();
   const sessions = [];

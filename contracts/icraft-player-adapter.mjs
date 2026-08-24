@@ -16,6 +16,7 @@ const DEFAULT_CAPABILITIES = Object.freeze({
   assetFormats: ["iplayer"],
   features: ["scene-load", "remote-iplayer", "orthographic-camera", "png-export"],
 });
+const DEFAULT_LOAD_TIMEOUT_MS = 15_000;
 
 function clone(value) {
   return structuredClone(value);
@@ -113,7 +114,12 @@ export function createIcraftPlayerAdapter({ catalog, playerFactory } = {}) {
     return { status: "mounted", adapterId: DEFAULT_CAPABILITIES.adapterId };
   }
 
-  async function load(document, { sceneId, requirements = {}, fallbackCapabilities = [] } = {}) {
+  async function load(document, {
+    sceneId,
+    requirements = {},
+    fallbackCapabilities = [],
+    timeoutMs = DEFAULT_LOAD_TIMEOUT_MS,
+  } = {}) {
     assertRenderDocument(document);
     if (!host) {
       return errorResult("invalid-tool-input", "iCraft Player must be mounted before loading a scene.", {
@@ -179,10 +185,13 @@ export function createIcraftPlayerAdapter({ catalog, playerFactory } = {}) {
     const warnings = [...selection.assessment.warnings, ...negotiation.warnings.map((warning) => warning.message)];
     try {
       let settled = false;
+      let readyInstance;
+      let timeoutHandle;
       const ready = new Promise((resolve, reject) => {
         const onReady = (instance) => {
           if (settled) return;
           settled = true;
+          readyInstance = instance;
           resolve(instance);
         };
         const onError = (cause) => {
@@ -197,11 +206,19 @@ export function createIcraftPlayerAdapter({ catalog, playerFactory } = {}) {
           onError(error);
           return;
         }
+        timeoutHandle = setTimeout(() => {
+          onError(new Error(`iCraft Player load timed out after ${timeoutMs} ms.`));
+        }, timeoutMs);
         Promise.resolve(result).then((instance) => {
           if (instance && !settled) onReady(instance);
+          else if (instance && instance !== readyInstance) disposePlayer(instance);
         }, onError);
       });
-      player = await ready;
+      try {
+        player = await ready;
+      } finally {
+        clearTimeout(timeoutHandle);
+      }
       activeSceneId = sceneId;
       activeSourceUri = sourceUri;
       state = "ready";

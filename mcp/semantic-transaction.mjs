@@ -107,12 +107,16 @@ export function assertSemanticTransaction(transaction) {
   if (!TRANSACTION_PHASES.has(transaction.phase)) throw new Error(`transaction phase is unsupported: ${String(transaction.phase)}`);
   assertCoreSnapshot(transaction.baseCore, "transaction.baseCore");
   assertRevision(transaction.baseRevision, "transaction.baseRevision");
+  if (transaction.baseRevision !== transaction.baseCore.revision) throw new Error("transaction.baseRevision must match transaction.baseCore.revision");
   if (typeof transaction.preserveOverrides !== "boolean") throw new Error("transaction.preserveOverrides must be boolean");
   if (!Array.isArray(transaction.commands)) throw new Error("transaction.commands must be an array");
   transaction.commands.forEach(assertSemanticCommand);
   if (transaction.previewCore !== null) assertCoreSnapshot(transaction.previewCore, "transaction.previewCore");
   if (transaction.committedCore !== null) assertCoreSnapshot(transaction.committedCore, "transaction.committedCore");
   assertRevision(transaction.committedRevision, "transaction.committedRevision");
+  if (transaction.committedCore !== null && transaction.committedRevision !== transaction.committedCore.revision) {
+    throw new Error("transaction.committedRevision must match transaction.committedCore.revision");
+  }
   if (transaction.history !== null) assertHistoryState(transaction.history);
   if (transaction.error !== null) {
     if (!isRecord(transaction.error) || typeof transaction.error.code !== "string" || typeof transaction.error.message !== "string") {
@@ -120,6 +124,8 @@ export function assertSemanticTransaction(transaction) {
     }
   }
   assertSummary(transaction.summary);
+  if (transaction.summary.baseRevision !== transaction.baseRevision) throw new Error("transaction.summary.baseRevision must match transaction.baseRevision");
+  if (transaction.summary.preserveHumanOverrides !== transaction.preserveOverrides) throw new Error("transaction.summary.preserveHumanOverrides must match transaction.preserveOverrides");
   if (transaction.phase === "prepared" && transaction.previewCore !== null) throw new Error("prepared transaction cannot contain a preview");
   if (transaction.phase === "previewing" && transaction.previewCore === null) throw new Error("previewing transaction must contain a preview");
   if (transaction.phase === "committed" && (transaction.committedCore === null || transaction.committedRevision === null)) throw new Error("committed transaction must contain a committed Core and revision");

@@ -74,6 +74,21 @@ function axisBetween(left, right) {
   return "stationary";
 }
 
+function resolveAxis(points, segmentIndex, preferredStep) {
+  const direct = axisBetween(points[segmentIndex], points[segmentIndex + 1]);
+  if (direct !== "stationary") return direct;
+
+  const segmentCount = points.length - 1;
+  const searchSteps = [preferredStep, -preferredStep];
+  for (const step of searchSteps) {
+    for (let candidate = segmentIndex + step; candidate >= 0 && candidate < segmentCount; candidate += step) {
+      const axis = axisBetween(points[candidate], points[candidate + 1]);
+      if (axis !== "stationary") return axis;
+    }
+  }
+  return "stationary";
+}
+
 /**
  * Move one point while keeping the route on horizontal/vertical grid edges.
  * Corner handles move the adjacent segment with them; endpoints slide along
@@ -91,18 +106,18 @@ export function editRoutePoint(points, pointIndex, target) {
   const finish = () => assertOrthogonalRoute(next, "edited route");
 
   if (index === 0) {
-    if (axisBetween(next[0], next[1]) === "horizontal") next[0].x = desired.x;
+    if (resolveAxis(next, 0, 1) === "horizontal") next[0].x = desired.x;
     else next[0].y = desired.y;
     return finish();
   }
   if (index === next.length - 1) {
-    if (axisBetween(next[index - 1], next[index]) === "horizontal") next[index].x = desired.x;
+    if (resolveAxis(next, index - 1, -1) === "horizontal") next[index].x = desired.x;
     else next[index].y = desired.y;
     return finish();
   }
 
-  const incoming = axisBetween(next[index - 1], current);
-  const outgoing = axisBetween(current, next[index + 1]);
+  const incoming = resolveAxis(next, index - 1, -1);
+  const outgoing = resolveAxis(next, index, 1);
   const moveX = Math.abs(desired.x - current.x) >= Math.abs(desired.y - current.y);
   if (incoming === "horizontal" && outgoing === "vertical") {
     if (moveX) {

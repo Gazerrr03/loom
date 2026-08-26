@@ -34,6 +34,15 @@ test("route point editing keeps orthogonal grid edges", () => {
   }
 });
 
+test("route point editing resolves coincident neighbors from a non-stationary segment", () => {
+  const points = [{ x: 0, y: 0 }, { x: 0, y: 0 }, { x: 10, y: 0 }];
+  const alongSegment = editRoutePoint(points, 1, { x: 5, y: 0 });
+  assert.deepEqual(alongSegment, [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 10, y: 0 }]);
+
+  const acrossSegment = editRoutePoint(points, 1, { x: 0, y: 10 });
+  assert.deepEqual(acrossSegment, [{ x: 0, y: 10 }, { x: 0, y: 10 }, { x: 10, y: 10 }]);
+});
+
 test("route editor rejects an input route with a diagonal XZ segment", () => {
   assert.throws(
     () => editRoutePoint([{ x: 0, y: 0 }, { x: 10, y: 10 }], 0, { x: 4, y: 0 }),

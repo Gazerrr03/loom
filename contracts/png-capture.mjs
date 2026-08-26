@@ -67,7 +67,8 @@ function assertLayerList(layers, path) {
  * separate from Effective Layout so a browser session cannot silently become
  * the export source. Callers may provide an explicit canonical camera when a
  * future export-setting editor has one; otherwise RenderDocument.exportCamera
- * is authoritative.
+ * is authoritative. `view` remains compatibility/layout metadata and is not a
+ * second camera authority.
  */
 export function createPngCaptureRequest(document, options, { camera } = {}) {
   assertRenderDocument(document);

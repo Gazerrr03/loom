@@ -65,6 +65,30 @@ test("RenderDocument resolves effective layout without exposing source layers", 
   assert.equal("overrides" in document.effectiveLayout, false);
 });
 
+test("RenderDocument resolves legacy view modes to one canonical export camera", async () => {
+  const artifact = await readFixture();
+  artifact.composition.defaultView = {
+    ...artifact.composition.defaultView,
+    projection: "perspective",
+    preset: "legacy-perspective",
+  };
+
+  const document = createRenderDocument(artifact, {
+    revision: "sha256:legacy-view-fallback",
+    components: await readComponents(),
+  });
+
+  assert.deepEqual(document.exportCamera, {
+    projection: "orthographic",
+    preset: "isometric",
+    azimuthDeg: 45,
+    elevationDeg: 35.264,
+    target: { x: 0, y: 0 },
+    orthoScale: 1,
+  });
+  assert.equal(document.effectiveLayout.view.projection, "perspective");
+});
+
 test("RenderDocument is isolated and read-only for an Adapter", async () => {
   const artifact = await readFixture();
   const document = createRenderDocument(artifact, {

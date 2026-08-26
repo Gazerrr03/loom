@@ -87,7 +87,8 @@ function assertSafeAreaGuides(guides, path) {
 
 /**
  * Build the exact layer set that a PNG renderer may composite. Editor chrome
- * is deliberately not representable in this value.
+ * is deliberately not representable in this value. `camera` is the only
+ * camera authority; `view` is retained as compatibility/layout metadata.
  */
 export function createPngComposition(request, { sceneNodes = null, overlays = null, composition = null } = {}) {
   assertPngCaptureRequest(request);

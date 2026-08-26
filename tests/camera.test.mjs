@@ -124,6 +124,64 @@ test("legacy Diagrams derive an export camera without mutating the Artifact", as
   assert.equal(Object.hasOwn(artifact, "exportSettings"), false);
 });
 
+test("legacy non-canonical view modes fall back to the canonical camera", async () => {
+  const artifact = await readFixture();
+  artifact.composition.defaultView = {
+    ...artifact.composition.defaultView,
+    projection: "perspective",
+    preset: "legacy-perspective",
+    azimuthDeg: 315,
+    elevationDeg: 60,
+    zoom: 2.2,
+  };
+  assert.doesNotThrow(() => assertDiagramArtifact(artifact));
+  const before = structuredClone(artifact);
+
+  assert.deepEqual(resolveExportCamera(artifact), {
+    ...CAMERA_DEFAULTS,
+    target: { x: 0, y: 0 },
+  });
+  assert.deepEqual(artifact, before);
+  assert.equal(Object.hasOwn(artifact, "exportSettings"), false);
+});
+
+test("canonical legacy view values map into the one canonical camera contract", async () => {
+  const artifact = await readFixture();
+  artifact.composition.defaultView = {
+    ...artifact.composition.defaultView,
+    projection: "orthographic",
+    preset: "isometric",
+    azimuthDeg: 135,
+    elevationDeg: 40,
+    zoom: 1.25,
+  };
+
+  assert.deepEqual(resolveExportCamera(artifact), {
+    ...CAMERA_DEFAULTS,
+    azimuthDeg: 135,
+    elevationDeg: 40,
+    orthoScale: 1.25,
+    target: { x: 0, y: 0 },
+  });
+});
+
+test("persisted export camera remains authoritative over legacy view metadata", async () => {
+  const artifact = await readFixture();
+  artifact.composition.defaultView = {
+    ...artifact.composition.defaultView,
+    projection: "perspective",
+    preset: "legacy-perspective",
+  };
+  const persisted = {
+    ...CAMERA_DEFAULTS,
+    azimuthDeg: 225,
+    target: { x: 18, y: -12 },
+  };
+  artifact.exportSettings = { camera: persisted };
+
+  assert.deepEqual(resolveExportCamera(artifact), persisted);
+});
+
 test("export camera is a persisted setting outside Human Override and remains immutable by copy", async () => {
   const artifact = await readFixture();
   const next = withExportCamera(artifact, {

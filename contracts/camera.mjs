@@ -145,19 +145,41 @@ export function normalizeCamera(camera = {}, { fallback = CAMERA_DEFAULTS } = {}
   };
 }
 
-/** Convert the legacy composition.defaultView into a canonical camera. */
-export function cameraFromView(view, { target = CAMERA_DEFAULTS.target } = {}) {
+/**
+ * Convert legacy composition.defaultView metadata into the canonical Camera.
+ *
+ * Legacy views intentionally have a wider contract than export cameras. A
+ * legacy perspective or non-isometric view therefore falls back to the
+ * canonical isometric defaults instead of leaking an unsupported mode into
+ * normalizeCamera().
+ */
+export function cameraFromLegacyView(view, { target = CAMERA_DEFAULTS.target } = {}) {
   if (!isRecord(view)) throw new TypeError("view must be an object");
-  const camera = normalizeCamera({
-    projection: view.projection,
-    preset: view.preset,
-    azimuthDeg: view.azimuthDeg,
-    elevationDeg: view.elevationDeg,
-    target,
-    orthoScale: view.zoom,
-  });
+
+  const isCanonicalLegacyView = (
+    view.projection === CAMERA_PROJECTION
+    && view.preset === CAMERA_PRESET
+  );
+  const cameraInput = isCanonicalLegacyView
+    ? {
+      projection: CAMERA_PROJECTION,
+      preset: CAMERA_PRESET,
+      azimuthDeg: view.azimuthDeg,
+      elevationDeg: view.elevationDeg,
+      target,
+      orthoScale: view.zoom,
+    }
+    : {
+      ...CAMERA_DEFAULTS,
+      target,
+    };
+
+  const camera = normalizeCamera(cameraInput);
   return assertCamera(camera);
 }
+
+/** @deprecated Use cameraFromLegacyView to make the compatibility boundary explicit. */
+export const cameraFromView = cameraFromLegacyView;
 
 export function cloneCamera(camera) {
   return clone(assertCamera(camera));

@@ -1,6 +1,6 @@
 import {
   assertCamera,
-  cameraFromView,
+  cameraFromLegacyView,
   cloneCamera,
   normalizeCamera,
 } from "./camera.mjs";
@@ -34,8 +34,9 @@ export function assertExportSettings(settings, path = "exportSettings") {
 
 /**
  * Resolve the camera used by an export. An absent setting is a legacy Diagram
- * and derives its stable camera from composition.defaultView without writing
- * the derived value back into the artifact.
+ * and derives its stable canonical camera from composition.defaultView without
+ * writing the derived value back into the artifact. defaultView is a legacy
+ * compatibility input, never a second export-camera authority.
  */
 export function resolveExportCamera(artifact, override) {
   if (!isRecord(artifact)) throw new TypeError("artifact must be an object");
@@ -45,7 +46,7 @@ export function resolveExportCamera(artifact, override) {
     assertExportSettings(artifact.exportSettings);
     return cloneCamera(artifact.exportSettings.camera);
   }
-  return cameraFromView(artifact.composition.defaultView);
+  return cameraFromLegacyView(artifact.composition.defaultView);
 }
 
 /** Build a canonical persisted export settings object from interactive input. */

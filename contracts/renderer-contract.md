@@ -51,7 +51,7 @@ type RenderDocument = {
     nodes: Record<string, NodeLayout>
     routes: Record<string, RouteLayout>
     groups: Record<string, GroupLayout>
-    view: View
+    view: LegacyViewMetadata
   }
   annotations: Annotation[]
   presentation: ResolvedPresentation
@@ -62,7 +62,7 @@ type RenderDocument = {
 
 `effectiveLayout` 由 Core 按字段合并 Generated Layout 与 Human Override。Renderer 不应自行读取两层并猜测优先级。
 
-`RenderDocument` 的顶层字段固定为 `artifactId`、`revision`、`semantic`、`composition`、`exportCamera`、`effectiveLayout`、`annotations`、`presentation`、`components` 和 `assets`。`components` 与 `assets` 是 Core 已解析的对象 map，分别以 `componentRef` 和资产 ID 为 key；Renderer 不负责查找或拼接它们。`exportCamera` 是 Core 从 `exportSettings.camera` 解析出的只读导出相机，不是浏览器运行时相机。
+`RenderDocument` 的顶层字段固定为 `artifactId`、`revision`、`semantic`、`composition`、`exportCamera`、`effectiveLayout`、`annotations`、`presentation`、`components` 和 `assets`。`components` 与 `assets` 是 Core 已解析的对象 map，分别以 `componentRef` 和资产 ID 为 key；Renderer 不负责查找或拼接它们。`exportCamera` 是 Core 解析出的唯一只读导出相机，不是浏览器运行时相机。`effectiveLayout.view` 是旧版/布局兼容元数据，不是第二个导出相机；Renderer 不得用它覆盖 `exportCamera`。
 
 RenderDocument 不携带 `layout.generated`、`layout.overrides` 或任何 Renderer 私有运行时对象。Core 以当前 Artifact 的 revision 创建一份独立的只读投影；Adapter 对投影的修改不得反向改变 `diagram.json`。
 
@@ -79,13 +79,23 @@ layers:
 | --- | --- | --- |
 | Diagram | Canonical canvas, node, route and annotation positions | `composition.unit`; persisted in `diagram.json` |
 | Page | Diagram position relative to one page bounds | Same unit; derived, never persisted as a second truth |
-| View | Camera-centred coordinates after zoom/orientation | Workspace session input; derived and never persisted |
+| View | Legacy/layout view metadata used by existing layout-compatible consumers | `composition.defaultView` plus explicit layout overrides; not the export camera |
 | Screen | Pointer and pixel coordinates in the browser/export viewport | CSS/device pixels; never written into Artifact |
 
 The canonical Diagram origin is the spread's top-left corner (x increases to
 the right, y increases downward); `elevation` remains a separate depth value.
 Pointer conversion must round-trip through these layers without changing the
 stored unit or writing screen pixels into Human Override.
+
+```ts
+type LegacyViewMetadata = {
+  projection: 'orthographic' | 'perspective'
+  preset: string
+  azimuthDeg: number
+  elevationDeg: number
+  zoom: number
+}
+```
 
 ### Camera ownership and reproducibility
 
@@ -104,7 +114,7 @@ type Camera = {
 
 - Workspace 浏览相机是 session-only 的 `pan`、`zoom`、`azimuthDeg` 和 `elevationDeg`。旋转、缩放和平移只更新内存中的浏览状态，不调用 `layout.view.change`，不产生语义命令、history 事务、dirty 状态或 Human Override。
 - 导出相机持久化在 Artifact 的 `exportSettings.camera`，不属于 `layout.overrides`。`RenderDocument.exportCamera` 和 PNG capture request 的 `camera` 必须引用同一份规范化值；导出不能从当前浏览 session 自动快照。
-- 旧 Artifact 没有 `exportSettings.camera` 时，Core 从 `composition.defaultView` 推导默认等角相机，但解析过程不得写回 Artifact。已存在但结构非法的导出相机必须拒绝，并报告精确字段路径。
+- 旧 Artifact 没有 `exportSettings.camera` 时，Core 只把 `composition.defaultView` 当作 legacy 输入，通过显式 adapter 转成 canonical 默认等角相机；不支持的 legacy projection/preset 回退到 `orthographic + isometric`，解析过程不得写回 Artifact。已存在但结构非法的导出相机必须拒绝，并报告精确字段路径。
 - `target` 是 Diagram composition-space 的目标点；浏览器像素 pan 只存在于 session 层。相同 Artifact revision、导出相机和导出设置必须生成相同的 RenderDocument 相机、投影输入和 capture request。
 
 ## 3. 能力协商

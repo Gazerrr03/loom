@@ -63,6 +63,7 @@ test("node and edge annotation positions follow Effective Layout", async () => {
   const moved = structuredClone(document);
   moved.effectiveLayout.nodes["stage-field"].x += 20;
   moved.effectiveLayout.routes["edge-connect"].points[1].x += 20;
+  moved.effectiveLayout.routes["edge-connect"].points[2].x += 20;
   const second = projectOverlays(moved);
 
   const firstNodeNote = first.annotations.find((annotation) => annotation.annotationId === "annotation-field");
@@ -79,6 +80,7 @@ test("overlay world adapters carry node and route elevations without changing Di
   elevated.effectiveLayout.nodes["stage-field"].elevation = 8;
   elevated.effectiveLayout.routes["edge-connect"].points = [
     { x: 242, y: 105, elevation: 3 },
+    { x: 280, y: 105, elevation: 7 },
     { x: 280, y: 98, elevation: 7 },
   ];
 
@@ -88,6 +90,7 @@ test("overlay world adapters carry node and route elevations without changing Di
 
   assert.deepEqual(route.worldPoints, [
     { x: 242, y: 3, z: 105 },
+    { x: 280, y: 7, z: 105 },
     { x: 280, y: 7, z: 98 },
   ]);
   assert.equal(annotation.worldPosition.y, 8);

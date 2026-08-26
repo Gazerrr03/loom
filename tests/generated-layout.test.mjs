@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { assertGeneratedLayout, generateLayout } from "../contracts/generated-layout.mjs";
+import { assertOrthogonalRoute } from "../contracts/route-geometry.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 async function readJson(relativePath) { return JSON.parse(await readFile(join(repoRoot, relativePath), "utf8")); }
@@ -32,6 +33,20 @@ test("primary routes follow the lower-left to upper-right reading direction", as
     assert.ok(points.at(-1).x >= points[0].x, edge.id);
     assert.ok(points.at(-1).y <= points[0].y, edge.id);
   }
+});
+
+test("main, alternative, and compounding-loop generated routes stay on XZ grid edges", async () => {
+  const artifact = await readJson("examples/flovvas-massing.diagram.json");
+  const { layout } = generateLayout(artifact, { seed: "golden-layout-v1" });
+  const routesByRole = new Map(artifact.semantic.edges.map((edge) => [edge.id, edge.visualRole]));
+  const coveredRoles = new Set();
+  for (const [edgeId, route] of Object.entries(layout.generated.routes)) {
+    assert.doesNotThrow(() => assertOrthogonalRoute(route.points, `generated.routes.${edgeId}.points`));
+    const role = routesByRole.get(edgeId);
+    if (["main-flow", "alternative", "compounding-loop"].includes(role)) coveredRoles.add(role);
+    if (role === "compounding-loop") assert.equal(route.points.length, 5, edgeId);
+  }
+  assert.deepEqual([...coveredRoles].sort(), ["alternative", "compounding-loop", "main-flow"]);
 });
 
 test("constraint conflicts are returned as a report without mutating the artifact or overrides", async () => {

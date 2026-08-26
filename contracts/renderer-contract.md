@@ -87,10 +87,24 @@ Diagram `x` maps to world `X`, Diagram `y` maps to world `Z`, and optional
 `elevation` maps to world `Y`. This interpretation is a fixed contract in
 `contracts/coordinates.mjs`; it is not a Renderer-specific field in the
 Artifact. Route control-point shape rules are owned by the route contract and
-are not changed by this coordinate adapter. The shared adapter is the only
+are not changed by this coordinate adapter. In the XZ route plane, every pair
+of consecutive control points may change only one world axis (`X` or `Z`), so
+diagonal segments are invalid. `elevation` remains an independent world-Y
+value and does not change the planar route axis. The shared adapter is the only
 mapping boundary used by scene projection, overlays, and Workspace hit
 testing. Pointer conversion must round-trip without changing the stored unit
 or writing screen pixels into Human Override.
+
+### Orthogonal route grid
+
+The route contract in `contracts/route-geometry.mjs` defines the persisted
+route topology: points are still Diagram `x`/`y`/`elevation`, while the XZ
+projection must follow square-grid edges. The Workspace draws its authoring
+grid by projecting world-X and world-Z basis vectors through the current view
+transform. Changing pan, zoom, or orbit therefore changes only the grid and
+screen projection; it cannot rewrite route points or turn an orthogonal route
+into a diagonal one. The visual grid is guidance, not a second persisted
+coordinate system, and generated node centers may remain fractional.
 
 ## 3. 能力协商
 

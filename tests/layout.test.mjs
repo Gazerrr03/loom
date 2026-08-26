@@ -35,11 +35,18 @@ test("nested parameters merge by key while route points remain one overridable f
   const layout = structuredClone(artifact.layout);
   layout.generated.nodes["stage-line"].parameters = { cardCount: 6, density: "high" };
   layout.overrides.nodes["stage-line"] = { parameters: { cardCount: 8 } };
-  layout.overrides.routes["edge-split"] = { points: [{ x: 1, y: 2 }, { x: 3, y: 4 }] };
+  layout.overrides.routes["edge-split"] = { points: [{ x: 1, y: 2 }, { x: 3, y: 2 }, { x: 3, y: 4 }] };
 
   const effective = mergeEffectiveLayout(layout);
   assert.deepEqual(effective.nodes["stage-line"].parameters, { cardCount: 8, density: "high" });
-  assert.deepEqual(effective.routes["edge-split"].points, [{ x: 1, y: 2 }, { x: 3, y: 4 }]);
+  assert.deepEqual(effective.routes["edge-split"].points, [{ x: 1, y: 2 }, { x: 3, y: 2 }, { x: 3, y: 4 }]);
+});
+
+test("a diagonal route override is structurally blocked before merge", async () => {
+  const artifact = await readArtifact();
+  const layout = structuredClone(artifact.layout);
+  layout.overrides.routes["edge-split"] = { points: [{ x: 1, y: 2 }, { x: 3, y: 4 }] };
+  assert.throws(() => mergeEffectiveLayout(layout), /only one world axis \(X or Z\).*diagonal segment/);
 });
 
 test("single-field, object, and full-layer clears are immutable and table-driven", async () => {

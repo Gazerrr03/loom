@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { assertOrthogonalRoute } from "../contracts/route-geometry.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -29,12 +30,7 @@ test("module map links the author-facing visual slice", async () => {
 test("Golden Case routes use square-grid edges and the renderer exposes that grid", async () => {
   const diagram = JSON.parse(await readFile(join(repoRoot, "examples/flovvas-massing.diagram.json"), "utf8"));
   for (const [edgeId, route] of Object.entries(diagram.layout.generated.routes)) {
-    assert.ok(route.points.length >= 2, `${edgeId} must have at least two route points`);
-    for (let index = 1; index < route.points.length; index += 1) {
-      const previous = route.points[index - 1];
-      const current = route.points[index];
-      assert.ok(previous.x === current.x || previous.y === current.y, `${edgeId} segment ${index} must follow one grid axis`);
-    }
+    assert.doesNotThrow(() => assertOrthogonalRoute(route.points, `routes.${edgeId}.points`));
   }
   const html = await readFile(join(repoRoot, "diagrams/flovvas-reference-renderer.html"), "utf8");
   assert.match(html, /const GRID_STEP = 20/);

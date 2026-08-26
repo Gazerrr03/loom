@@ -6,9 +6,9 @@ import {
   updatePreview,
 } from "../contracts/interaction-commit.mjs";
 import { mergeEffectiveLayout } from "../contracts/layout.mjs";
+import { assertOrthogonalRoute, routeAxisBetween, ROUTE_GRID_SIZE } from "../contracts/route-geometry.mjs";
 
 const ID_PATTERN = /^[a-z][a-z0-9._-]*$/;
-const ROUTE_GRID_SIZE = 1;
 
 function clone(value) {
   return structuredClone(value);
@@ -50,6 +50,7 @@ function routePoints(artifact, edgeId) {
   const points = routes[edgeId]?.points;
   if (!Array.isArray(points) || points.length < 2) return null;
   points.forEach((point, index) => assertPoint(point, `routes.${edgeId}.points[${index}]`));
+  assertOrthogonalRoute(points, `routes.${edgeId}.points`);
   return points.map((point) => ({ ...point }));
 }
 
@@ -67,9 +68,59 @@ function snap(value) {
 }
 
 function axisBetween(left, right) {
-  if (left.x === right.x) return "vertical";
-  if (left.y === right.y) return "horizontal";
-  return Math.abs(right.x - left.x) >= Math.abs(right.y - left.y) ? "horizontal" : "vertical";
+  const axis = routeAxisBetween(left, right);
+  if (axis === "x") return "horizontal";
+  if (axis === "z") return "vertical";
+  return "stationary";
+}
+
+function resolveAxis(points, segmentIndex, preferredStep) {
+  const direct = axisBetween(points[segmentIndex], points[segmentIndex + 1]);
+  if (direct !== "stationary") return direct;
+
+  const segmentCount = points.length - 1;
+  const searchSteps = [preferredStep, -preferredStep];
+  for (const step of searchSteps) {
+    for (let candidate = segmentIndex + step; candidate >= 0 && candidate < segmentCount; candidate += step) {
+      const axis = axisBetween(points[candidate], points[candidate + 1]);
+      if (axis !== "stationary") return axis;
+    }
+  }
+  return "stationary";
+}
+
+function axisRange(points, pointIndex, axis, direction) {
+  const lastSegment = points.length - 2;
+  if (direction === "left") {
+    let firstSegment = pointIndex - 1;
+    while (firstSegment > 0) {
+      const previousAxis = axisBetween(points[firstSegment - 1], points[firstSegment]);
+      if (previousAxis !== axis && previousAxis !== "stationary") break;
+      firstSegment -= 1;
+    }
+    return { start: firstSegment, end: pointIndex };
+  }
+
+  let lastPoint = pointIndex + 1;
+  while (lastPoint < lastSegment + 1) {
+    const nextAxis = axisBetween(points[lastPoint], points[lastPoint + 1]);
+    if (nextAxis !== axis && nextAxis !== "stationary") break;
+    lastPoint += 1;
+  }
+  return { start: pointIndex, end: lastPoint };
+}
+
+function axisRun(points, pointIndex, axis) {
+  return {
+    start: axisRange(points, pointIndex, axis, "left").start,
+    end: axisRange(points, pointIndex, axis, "right").end,
+  };
+}
+
+function setRangeCoordinate(points, range, coordinate, value) {
+  for (let index = range.start; index <= range.end; index += 1) {
+    points[index][coordinate] = value;
+  }
 }
 
 /**
@@ -80,54 +131,52 @@ function axisBetween(left, right) {
 export function editRoutePoint(points, pointIndex, target) {
   if (!Array.isArray(points) || points.length < 2) throw new Error("points must contain at least two points");
   points.forEach((point, index) => assertPoint(point, `points[${index}]`));
+  assertOrthogonalRoute(points, "points");
   assertPoint(target, "target");
   const index = assertPointIndex(pointIndex, points.length);
   const next = points.map((point) => ({ ...point }));
   const current = next[index];
   const desired = { x: snap(target.x), y: snap(target.y) };
+  const finish = () => assertOrthogonalRoute(next, "edited route");
 
   if (index === 0) {
-    if (axisBetween(next[0], next[1]) === "horizontal") next[0].x = desired.x;
+    if (resolveAxis(next, 0, 1) === "horizontal") next[0].x = desired.x;
     else next[0].y = desired.y;
-    return next;
+    return finish();
   }
   if (index === next.length - 1) {
-    if (axisBetween(next[index - 1], next[index]) === "horizontal") next[index].x = desired.x;
+    if (resolveAxis(next, index - 1, -1) === "horizontal") next[index].x = desired.x;
     else next[index].y = desired.y;
-    return next;
+    return finish();
   }
 
-  const incoming = axisBetween(next[index - 1], current);
-  const outgoing = axisBetween(current, next[index + 1]);
+  const incoming = resolveAxis(next, index - 1, -1);
+  const outgoing = resolveAxis(next, index, 1);
   const moveX = Math.abs(desired.x - current.x) >= Math.abs(desired.y - current.y);
   if (incoming === "horizontal" && outgoing === "vertical") {
     if (moveX) {
-      next[index].x = desired.x;
-      next[index + 1].x = desired.x;
+      setRangeCoordinate(next, axisRange(next, index, outgoing, "right"), "x", desired.x);
     } else {
-      next[index].y = desired.y;
-      next[index - 1].y = desired.y;
+      setRangeCoordinate(next, axisRange(next, index, incoming, "left"), "y", desired.y);
     }
-    return next;
+    return finish();
   }
   if (incoming === "vertical" && outgoing === "horizontal") {
     if (moveX) {
-      next[index].x = desired.x;
-      next[index - 1].x = desired.x;
+      setRangeCoordinate(next, axisRange(next, index, incoming, "left"), "x", desired.x);
     } else {
-      next[index].y = desired.y;
-      next[index + 1].y = desired.y;
+      setRangeCoordinate(next, axisRange(next, index, outgoing, "right"), "y", desired.y);
     }
-    return next;
+    return finish();
   }
   if (incoming === "horizontal") {
     if (moveX) next[index].x = desired.x;
-    else [next[index - 1], next[index], next[index + 1]].forEach((point) => { point.y = desired.y; });
+    else setRangeCoordinate(next, axisRun(next, index, incoming), "y", desired.y);
   } else {
-    if (moveX) [next[index - 1], next[index], next[index + 1]].forEach((point) => { point.x = desired.x; });
+    if (moveX) setRangeCoordinate(next, axisRun(next, index, outgoing), "x", desired.x);
     else next[index].y = desired.y;
   }
-  return next;
+  return finish();
 }
 
 /**

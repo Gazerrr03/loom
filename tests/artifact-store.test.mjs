@@ -9,6 +9,7 @@ import {
   loadDiagram,
   saveDiagram,
 } from "../core/artifact-store.mjs";
+import { DiagramContractError } from "../contracts/diagram-error.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const fixturePath = join(repoRoot, "examples/flovvas-massing.diagram.json");
@@ -87,5 +88,41 @@ test("expected revision prevents overwriting a newer file", async () => {
       expectedRevision: first.revision,
     }),
     /revision changed/,
+  );
+});
+
+test("legacy Diagram x/y/elevation Golden Case remains readable without migration", async () => {
+  const fixture = await readFixture();
+  assert.doesNotThrow(() => createDiagram(fixture));
+  assert.equal(fixture.layout.generated.nodes["stage-line"].elevation, 4);
+  assert.equal(fixture.layout.generated.routes["edge-split"].points[0].z, undefined);
+});
+
+test("unsupported persisted world coordinates are blocked with a structured diagnostic", async () => {
+  const fixture = await readFixture();
+  fixture.layout.generated.nodes["stage-line"].z = 12;
+
+  assert.throws(
+    () => createDiagram(fixture),
+    (error) => error instanceof DiagramContractError
+      && error.code === "unsupported-coordinate-space"
+      && error.recoverable === false
+      && error.fieldPath === "artifact.layout.generated.nodes"
+      && error.suggestedAction.includes("Diagram x/y"),
+  );
+});
+
+test("persisted Renderer camera state is blocked and load preserves the diagnostic", async () => {
+  const fixture = await readFixture();
+  fixture.composition.cameraState = { position: { x: 1, y: 2, z: 3 } };
+  const { filePath } = await tempPath();
+  await writeFile(filePath, JSON.stringify(fixture));
+
+  await assert.rejects(
+    () => loadDiagram(filePath),
+    (error) => error instanceof DiagramContractError
+      && error.code === "renderer-state-not-persistable"
+      && error.recoverable === false
+      && error.fieldPath === "artifact.composition",
   );
 });

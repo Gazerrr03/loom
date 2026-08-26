@@ -19,6 +19,8 @@ const ERROR_CODES = new Set([
   "unsupported-template",
   "invalid-layout",
   "invalid-tool-input",
+  "unsupported-coordinate-space",
+  "renderer-state-not-persistable",
   "revision-conflict",
   "render-failed",
   "export-failed",
@@ -95,6 +97,20 @@ export function createDiagramError({
   };
   if (suggestedFallback !== undefined) error.suggestedFallback = suggestedFallback;
   return assertDiagramError(error);
+}
+
+/**
+ * Throw a diagnostic while preserving the same structured fields that cross
+ * the Core and Tool boundaries. Plain validation errors remain compatible;
+ * callers that need to route a specific contract failure can inspect code.
+ */
+export class DiagramContractError extends Error {
+  constructor(diagnostic) {
+    const validated = assertDiagramError(diagnostic);
+    super(validated.message);
+    this.name = "DiagramContractError";
+    Object.assign(this, validated);
+  }
 }
 
 export { ERROR_CODES };

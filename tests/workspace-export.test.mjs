@@ -59,6 +59,18 @@ test("save revision conflicts are structured and leave the existing draft untouc
   );
 });
 
+test("Workspace storage blocks Renderer state before JSON serialization", async () => {
+  const artifact = await readJson("examples/flovvas-massing.diagram.json");
+  artifact.composition.camera = { position: { x: 1, y: 2, z: 3 } };
+
+  assert.throws(
+    () => serializeWorkspaceArtifact(artifact),
+    (error) => error.code === "renderer-state-not-persistable"
+      && error.recoverable === false
+      && error.fieldPath === "artifact.composition",
+  );
+});
+
 test("PNG plan binds Effective Layout to a two-page A4 capture and excludes editor chrome", async () => {
   const [artifact, catalog] = await Promise.all([
     readJson("examples/flovvas-massing.diagram.json"),
@@ -75,6 +87,13 @@ test("PNG plan binds Effective Layout to a two-page A4 capture and excludes edit
   assert.equal(plan.request.options.includeEditorChrome, false);
   assert.deepEqual(plan.composition.editorChrome, []);
   assert.equal(plan.composition.scene.length, artifact.semantic.nodes.length);
+  assert.deepEqual(plan.composition.scene.find((node) => node.nodeId === "stage-workbench").worldBounds, {
+    x: 522,
+    y: 10,
+    z: 35,
+    width: 82,
+    depth: 58,
+  });
   assert.equal(plan.composition.routes.length, artifact.semantic.edges.length);
   assert.equal(plan.composition.annotations.length, artifact.annotations.length);
 });

@@ -53,6 +53,7 @@ test("scene projection is stable and exposes Effective Layout transforms", async
   assert.equal(workbench.status, "mapped");
   assert.equal(workbench.componentRef, "flovvas-workbench");
   assert.equal(workbench.bounds.x, 522);
+  assert.deepEqual(workbench.worldBounds, { x: 522, y: 10, z: 35, width: 82, depth: 58 });
   assert.equal(workbench.elevation, 10);
   assert.equal(workbench.rotationYDeg, -4);
   assert.equal(workbench.scale, 1);
@@ -96,4 +97,3 @@ test("a missing Effective Layout entry fails before projection", async () => {
     (error) => error.code === "invalid-layout" && error.objectIds.includes("stage-line"),
   );
 });
-

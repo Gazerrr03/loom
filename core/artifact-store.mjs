@@ -5,7 +5,9 @@ import { dirname, join, basename } from "node:path";
 import { assertComposition } from "../contracts/composition.mjs";
 import { assertDiagramEnvelope } from "../contracts/diagram-envelope.mjs";
 import { assertExportSettings } from "../contracts/export-settings.mjs";
+import { DiagramContractError } from "../contracts/diagram-error.mjs";
 import { assertLayout } from "../contracts/layout.mjs";
+import { assertPersistedDiagramBoundary } from "../contracts/persisted-boundary.mjs";
 import { assertPresentationBoundary } from "../contracts/presentation.mjs";
 import { assertSemanticGraph } from "../contracts/semantic-graph.mjs";
 
@@ -23,6 +25,7 @@ function revisionFor(bytes) {
 
 export function assertDiagramArtifact(artifact) {
   assertDiagramEnvelope(artifact);
+  assertPersistedDiagramBoundary(artifact);
   assertSemanticGraph(artifact.semantic);
   assertComposition(artifact.composition);
   assertExportSettings(artifact.exportSettings);
@@ -61,6 +64,7 @@ export async function loadDiagram(filePath) {
   try {
     assertDiagramArtifact(artifact);
   } catch (error) {
+    if (error instanceof DiagramContractError) throw error;
     throw new Error("Diagram artifact failed contract validation", { cause: error });
   }
 

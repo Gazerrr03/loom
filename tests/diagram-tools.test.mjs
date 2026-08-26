@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, mkdtemp, readFile, stat } from "node:fs/promises";
+import { cp, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -123,4 +123,23 @@ test("tool service rejects unsupported tool names using the shared actionable er
   assert.equal(result.status, "error");
   assert.equal(result.error.code, "invalid-tool-input");
   assert.equal(result.effects.kind, "none");
+});
+
+test("tool service preserves structured coordinate compatibility blocks", async () => {
+  const { root, service } = await fixture();
+  const artifact = JSON.parse(await readFile(new URL("../examples/flovvas-massing.diagram.json", import.meta.url), "utf8"));
+  artifact.layout.generated.nodes["stage-line"].z = 12;
+  await writeFile(join(root, "unsupported-coordinate.diagram.json"), JSON.stringify(artifact));
+
+  const result = await service.execute(createToolCall({
+    toolName: "diagram.open",
+    requestId: "open-unsupported-coordinate",
+    input: { path: "unsupported-coordinate.diagram.json" },
+  }));
+
+  assert.equal(result.status, "error");
+  assert.equal(result.error.code, "unsupported-coordinate-space");
+  assert.equal(result.error.recoverable, false);
+  assert.equal(result.error.fieldPath, "artifact.layout.generated.nodes");
+  assert.match(result.error.suggestedAction, /Diagram x\/y/);
 });

@@ -3,7 +3,9 @@ import { assertComposition } from "../contracts/composition.mjs";
 import { assertDiagramEnvelope } from "../contracts/diagram-envelope.mjs";
 import { assertExportSettings } from "../contracts/export-settings.mjs";
 import { assertLayout } from "../contracts/layout.mjs";
+import { assertPersistedDiagramBoundary } from "../contracts/persisted-boundary.mjs";
 import { assertPresentationBoundary } from "../contracts/presentation.mjs";
+import { diagramRectToWorld } from "../contracts/coordinates.mjs";
 import { assertSemanticGraph } from "../contracts/semantic-graph.mjs";
 import { createRenderDocument } from "../contracts/render-document.mjs";
 import { projectOverlays } from "../contracts/overlay-projection.mjs";
@@ -17,6 +19,7 @@ function clone(value) {
 
 function assertArtifact(artifact) {
   assertDiagramEnvelope(artifact);
+  assertPersistedDiagramBoundary(artifact);
   assertSemanticGraph(artifact.semantic);
   assertComposition(artifact.composition);
   assertExportSettings(artifact.exportSettings);
@@ -170,6 +173,10 @@ function sceneNodesFor(document) {
         width: layout.width,
         height: layout.height,
       },
+      worldBounds: diagramRectToWorld(layout, {
+        elevation: layout.elevation ?? 0,
+        path: `scene.nodes.${node.id}.bounds`,
+      }),
       elevation: layout.elevation ?? 0,
       rotationYDeg: layout.rotationYDeg ?? 0,
       scale: layout.scale ?? 1,

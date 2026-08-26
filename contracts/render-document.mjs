@@ -4,6 +4,7 @@ import { assertDiagramEnvelope } from "./diagram-envelope.mjs";
 import { assertExportSettings, resolveExportCamera } from "./export-settings.mjs";
 import { mergeEffectiveLayout } from "./layout.mjs";
 import { assertLayout } from "./layout.mjs";
+import { assertPersistedDiagramBoundary } from "./persisted-boundary.mjs";
 import { assertPresentationBoundary } from "./presentation.mjs";
 import { assertSemanticGraph } from "./semantic-graph.mjs";
 
@@ -44,6 +45,7 @@ function assertRevision(revision) {
 
 function assertArtifact(artifact) {
   assertDiagramEnvelope(artifact);
+  assertPersistedDiagramBoundary(artifact);
   assertSemanticGraph(artifact.semantic);
   assertComposition(artifact.composition);
   assertExportSettings(artifact.exportSettings);

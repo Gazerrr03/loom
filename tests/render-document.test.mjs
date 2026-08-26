@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { DiagramContractError } from "../contracts/diagram-error.mjs";
 import { assertRenderDocument, createRenderDocument } from "../contracts/render-document.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -119,5 +120,17 @@ test("RenderDocument rejects missing component resolution and revision", async (
   assert.throws(
     () => createRenderDocument(artifact, { revision: "sha256:test", components, assets: [] }),
     /asset is missing: asset-card-slab/,
+  );
+});
+
+test("RenderDocument blocks a persisted world-space marker before Adapter projection", async () => {
+  const artifact = await readFixture();
+  artifact.composition.worldSpace = { plane: "xz", heightAxis: "y" };
+
+  assert.throws(
+    () => createRenderDocument(artifact, { revision: "sha256:test", components: [] }),
+    (error) => error instanceof DiagramContractError
+      && error.code === "unsupported-coordinate-space"
+      && error.fieldPath === "artifact.composition",
   );
 });

@@ -72,20 +72,27 @@ Route、Phase Zone 和 Annotation overlay 与 SceneNode 共享 Diagram coordinat
 
 ### Coordinate layers
 
-The Artifact is the source of truth for coordinates. MVP uses four explicit
+The Artifact is the source of truth for coordinates. MVP uses five explicit
 layers:
 
 | Layer | Meaning | Unit / ownership |
 | --- | --- | --- |
 | Diagram | Canonical canvas, node, route and annotation positions | `composition.unit`; persisted in `diagram.json` |
+| World | Renderer-facing 3D interpretation of Diagram geometry | XZ drawing plane; Y is height; derived by the shared adapter |
 | Page | Diagram position relative to one page bounds | Same unit; derived, never persisted as a second truth |
 | View | Legacy/layout view metadata used by existing layout-compatible consumers | `composition.defaultView` plus explicit layout overrides; not the export camera |
 | Screen | Pointer and pixel coordinates in the browser/export viewport | CSS/device pixels; never written into Artifact |
 
 The canonical Diagram origin is the spread's top-left corner (x increases to
-the right, y increases downward); `elevation` remains a separate depth value.
-Pointer conversion must round-trip through these layers without changing the
-stored unit or writing screen pixels into Human Override.
+the right, y increases downward). `diagram.json` remains intentionally 2D:
+Diagram `x` maps to world `X`, Diagram `y` maps to world `Z`, and optional
+`elevation` maps to world `Y`. This interpretation is a fixed contract in
+`contracts/coordinates.mjs`; it is not a Renderer-specific field in the
+Artifact. Route control-point shape rules are owned by the route contract and
+are not changed by this coordinate adapter. The shared adapter is the only
+mapping boundary used by scene projection, overlays, and Workspace hit
+testing. Pointer conversion must round-trip without changing the stored unit
+or writing screen pixels into Human Override.
 
 ```ts
 type LegacyViewMetadata = {

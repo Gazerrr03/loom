@@ -1,5 +1,6 @@
 import { assertDiagramPoint } from "./coordinates.mjs";
 import { mergeEffectiveLayout } from "./layout.mjs";
+import { assertOrthogonalRoute } from "./route-geometry.mjs";
 
 const ID_PATTERN = /^[a-z][a-z0-9._-]*$/;
 
@@ -111,6 +112,7 @@ export function assertRouteControlPoints(artifact, effectiveLayout = mergeEffect
       throw new Error(`Route ${edge.id} must contain at least two Diagram points`);
     }
     route.points.forEach((point, index) => assertDiagramPoint(point, artifact.composition.canvas, `layout.routes.${edge.id}.points[${index}]`));
+    assertOrthogonalRoute(route.points, `layout.routes.${edge.id}.points`);
   }
   return effectiveLayout;
 }
@@ -121,6 +123,7 @@ export function moveRouteControlPoint(route, index, point, canvas) {
   assertDiagramPoint(point, canvas, `route.points[${index}]`);
   const next = clone(route);
   next.points[index] = { ...point };
+  assertOrthogonalRoute(next.points, "route.points");
   return next;
 }
 

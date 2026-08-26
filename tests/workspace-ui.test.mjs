@@ -84,6 +84,16 @@ test("Workspace Canvas exposes route selection and one-shot control-point commit
   assert.doesNotMatch(routeModule, /from\s+["']node:/);
 });
 
+test("Workspace authoring grid follows the shared world-XZ route contract", () => {
+  assert.match(indexHtml, /id="workspace-grid"[^>]*data-coordinate-space="world-xz"/);
+  assert.doesNotMatch(indexHtml, /patternTransform="skewY/);
+  assert.match(appModule, /const WORLD_GRID_STEP = 20/);
+  assert.match(appModule, /function updateWorkspaceGrid/);
+  assert.match(appModule, /worldToScreen/);
+  assert.match(appModule, /pattern\.setAttribute\("patternTransform"/);
+  assert.match(routeModule, /assertOrthogonalRoute/);
+});
+
 test("Workspace Canvas exposes annotation selection and Inspector update boundary", () => {
   assert.match(appModule, /data-annotation-id/);
   assert.match(appModule, /selectAnnotation/);

@@ -8,6 +8,7 @@
 
 import { assertComposition } from "./composition.mjs";
 import { assertLayout } from "./layout.mjs";
+import { assertOrthogonalRoute } from "./route-geometry.mjs";
 import { assertSemanticGraph } from "./semantic-graph.mjs";
 
 const ID_PATTERN = /^[a-z][a-z0-9._-]*$/;
@@ -55,6 +56,7 @@ function assertPoint(point, path) {
 function assertPoints(points, path) {
   if (!Array.isArray(points) || points.length < 2) throw new Error(`${path} must contain at least two points`);
   points.forEach((point, index) => assertPoint(point, `${path}[${index}]`));
+  assertOrthogonalRoute(points, path);
 }
 
 function assertPreviewValue(type, value, path = "preview.value") {

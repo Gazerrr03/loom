@@ -5,6 +5,8 @@
  * This keeps a manual x adjustment from freezing generated y/scale changes.
  */
 
+import { assertOrthogonalRoute } from "./route-geometry.mjs";
+
 const LAYER_KINDS = ["nodes", "routes", "groups"];
 const OVERRIDE_KINDS = new Map([
   ["node", "nodes"],
@@ -31,6 +33,15 @@ function assertLayer(layer, path) {
   }
 }
 
+function assertRouteLayer(layer, path, { requirePoints = false } = {}) {
+  for (const [id, route] of Object.entries(layer)) {
+    assertRecord(route, `${path}.${id}`);
+    if (requirePoints || route.points !== undefined) {
+      assertOrthogonalRoute(route.points, `${path}.${id}.points`);
+    }
+  }
+}
+
 function assertOverrideTargets(layout) {
   for (const kind of LAYER_KINDS) {
     for (const id of Object.keys(layout.overrides[kind])) {
@@ -49,6 +60,8 @@ export function assertLayout(layout) {
   }
   assertLayer(layout.generated, "layout.generated");
   assertLayer(layout.overrides, "layout.overrides");
+  assertRouteLayer(layout.generated.routes, "layout.generated.routes", { requirePoints: true });
+  assertRouteLayer(layout.overrides.routes, "layout.overrides.routes");
   assertRecord(layout.overrides.view, "layout.overrides.view");
   assertOverrideTargets(layout);
   return layout;

@@ -89,7 +89,10 @@ Diagram `x` maps to world `X`, Diagram `y` maps to world `Z`, and optional
 `elevation` maps to world `Y`. This interpretation is a fixed contract in
 `contracts/coordinates.mjs`; it is not a Renderer-specific field in the
 Artifact. Route control-point shape rules are owned by the route contract and
-are not changed by this coordinate adapter. The shared adapter is the only
+are not changed by this coordinate adapter. In the XZ route plane, every pair
+of consecutive control points may change only one world axis (`X` or `Z`), so
+diagonal segments are invalid. `elevation` remains an independent world-Y
+value and does not change the planar route axis. The shared adapter is the only
 mapping boundary used by scene projection, overlays, and Workspace hit
 testing. Pointer conversion must round-trip without changing the stored unit
 or writing screen pixels into Human Override.
@@ -123,6 +126,17 @@ type Camera = {
 - 导出相机持久化在 Artifact 的 `exportSettings.camera`，不属于 `layout.overrides`。`RenderDocument.exportCamera` 和 PNG capture request 的 `camera` 必须引用同一份规范化值；导出不能从当前浏览 session 自动快照。
 - 旧 Artifact 没有 `exportSettings.camera` 时，Core 只把 `composition.defaultView` 当作 legacy 输入，通过显式 adapter 转成 canonical 默认等角相机；不支持的 legacy projection/preset 回退到 `orthographic + isometric`，解析过程不得写回 Artifact。已存在但结构非法的导出相机必须拒绝，并报告精确字段路径。
 - `target` 是 Diagram composition-space 的目标点；浏览器像素 pan 只存在于 session 层。相同 Artifact revision、导出相机和导出设置必须生成相同的 RenderDocument 相机、投影输入和 capture request。
+
+### Orthogonal route grid
+
+The route contract in `contracts/route-geometry.mjs` defines the persisted
+route topology: points are still Diagram `x`/`y`/`elevation`, while the XZ
+projection must follow square-grid edges. The Workspace draws its authoring
+grid by projecting world-X and world-Z basis vectors through the current view
+transform. Changing pan, zoom, or orbit therefore changes only the grid and
+screen projection; it cannot rewrite route points or turn an orthogonal route
+into a diagonal one. The visual grid is guidance, not a second persisted
+coordinate system, and generated node centers may remain fractional.
 
 ## 3. 能力协商
 

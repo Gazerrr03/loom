@@ -5,6 +5,7 @@ import {
   commitPreview,
   updatePreview,
 } from "../contracts/interaction-commit.mjs";
+import { diagramToWorld, worldToDiagram } from "../contracts/coordinates.mjs";
 import { mergeEffectiveLayout } from "../contracts/layout.mjs";
 
 const NODE_ID = /^[a-z][a-z0-9._-]*$/;
@@ -27,7 +28,8 @@ function assertPoint(point, path = "point") {
   assertRecord(point, path);
   assertFinite(point.x, `${path}.x`);
   assertFinite(point.y, `${path}.y`);
-  return { x: point.x, y: point.y };
+  if (point.elevation !== undefined) assertFinite(point.elevation, `${path}.elevation`);
+  return { x: point.x, y: point.y, ...(point.elevation === undefined ? {} : { elevation: point.elevation }) };
 }
 
 function assertNodeId(nodeId, path = "nodeId") {
@@ -56,9 +58,22 @@ function nodeBounds(artifact, nodeId) {
   };
 }
 
-function contains(bounds, point) {
+function worldNodeBounds(artifact, nodeId) {
+  const bounds = nodeBounds(artifact, nodeId);
+  if (!bounds) return null;
+  const origin = diagramToWorld({ x: bounds.x, y: bounds.y });
+  return {
+    x: origin.x,
+    z: origin.z,
+    width: bounds.width,
+    depth: bounds.height,
+    zIndex: bounds.zIndex,
+  };
+}
+
+function containsWorld(bounds, point) {
   return point.x >= bounds.x && point.x <= bounds.x + bounds.width
-    && point.y >= bounds.y && point.y <= bounds.y + bounds.height;
+    && point.z >= bounds.z && point.z <= bounds.z + bounds.depth;
 }
 
 /**
@@ -68,9 +83,10 @@ function contains(bounds, point) {
 export function hitTestNode(artifact, point) {
   assertRecord(artifact, "artifact");
   const diagramPoint = assertPoint(point, "diagramPoint");
+  const worldPoint = diagramToWorld(diagramPoint);
   const candidates = artifact.semantic.nodes
-    .map((node, index) => ({ node, index, bounds: nodeBounds(artifact, node.id) }))
-    .filter(({ bounds }) => bounds && contains(bounds, diagramPoint))
+    .map((node, index) => ({ node, index, bounds: worldNodeBounds(artifact, node.id) }))
+    .filter(({ bounds }) => bounds && containsWorld(bounds, worldPoint))
     .sort((left, right) => (right.bounds.zIndex - left.bounds.zIndex) || (right.index - left.index));
   return candidates[0]?.node.id ?? null;
 }
@@ -94,26 +110,47 @@ export function createIsometricTransform({
   const determinant = basis.xFromX * basis.yFromY - basis.xFromY * basis.yFromX;
   if (determinant === 0) throw new Error("basis must be invertible");
 
-  return Object.freeze({
-    diagramToScreen(point, { z = 0 } = {}) {
-      const diagramPoint = assertPoint(point, "diagramPoint");
-      assertFinite(z, "z");
-      return {
-        x: safeOrigin.x + safePan.x + zoom * (basis.xFromX * diagramPoint.x + basis.xFromY * diagramPoint.y),
-        y: safeOrigin.y + safePan.y + zoom * (basis.yFromX * diagramPoint.x + basis.yFromY * diagramPoint.y - z * 1.7),
-      };
-    },
-    screenToDiagram(point, { z = 0 } = {}) {
-      const screenPoint = assertPoint(point, "screenPoint");
-      assertFinite(z, "z");
-      const dx = (screenPoint.x - safeOrigin.x - safePan.x) / zoom;
-      const dy = (screenPoint.y - safeOrigin.y - safePan.y) / zoom + z * 1.7;
-      return {
-        x: (dx * basis.yFromY - dy * basis.xFromY) / determinant,
-        y: (basis.xFromX * dy - basis.yFromX * dx) / determinant,
-      };
-    },
-  });
+  function worldToScreen(worldPoint) {
+    assertRecord(worldPoint, "worldPoint");
+    for (const field of ["x", "y", "z"]) assertFinite(worldPoint[field], `worldPoint.${field}`);
+    return {
+      x: safeOrigin.x + safePan.x + zoom * (basis.xFromX * worldPoint.x + basis.xFromY * worldPoint.z),
+      y: safeOrigin.y + safePan.y + zoom * (basis.yFromX * worldPoint.x + basis.yFromY * worldPoint.z - worldPoint.y * 1.7),
+    };
+  }
+
+  function screenToWorld(point, options = {}) {
+    const screenPoint = assertPoint(point, "screenPoint");
+    const worldY = options.elevation ?? options.y ?? 0;
+    assertFinite(worldY, "worldY");
+    const dx = (screenPoint.x - safeOrigin.x - safePan.x) / zoom;
+    const dy = (screenPoint.y - safeOrigin.y - safePan.y) / zoom + worldY * 1.7;
+    return {
+      x: (dx * basis.yFromY - dy * basis.xFromY) / determinant,
+      y: worldY,
+      z: (basis.xFromX * dy - basis.yFromX * dx) / determinant,
+    };
+  }
+
+  function diagramToScreen(point, options = {}) {
+    const diagramPoint = assertPoint(point, "diagramPoint");
+    // `z` remains a runtime-only compatibility alias for the old transform
+    // option. It is never a persisted Diagram field.
+    const height = options.elevation ?? options.z ?? diagramPoint.elevation ?? 0;
+    assertFinite(height, "elevation");
+    return worldToScreen(diagramToWorld({ ...diagramPoint, elevation: height }));
+  }
+
+  function screenToDiagram(point, options = {}) {
+    // `z` remains accepted for existing callers; it means world Y here.
+    const height = options.elevation ?? options.z ?? 0;
+    assertFinite(height, "elevation");
+    const diagramPoint = worldToDiagram(screenToWorld(point, { y: height }), { includeZeroElevation: options.includeElevation === true });
+    if (options.includeElevation !== true) delete diagramPoint.elevation;
+    return diagramPoint;
+  }
+
+  return Object.freeze({ worldToScreen, screenToWorld, diagramToScreen, screenToDiagram });
 }
 
 function previewCommand(preview) {

@@ -1,4 +1,5 @@
 import { assertRouteControlPoints, resolveAnnotationAnchor } from "./anchors.mjs";
+import { diagramRectToWorld, diagramToWorld, routeToWorld } from "./coordinates.mjs";
 import { mergeEffectiveLayout } from "./layout.mjs";
 import { assertRenderDocument } from "./render-document.mjs";
 
@@ -15,6 +16,24 @@ function clone(value) {
 
 function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function assertWorldPoint(point, path) {
+  if (!isRecord(point)) throw new Error(`${path} must be an object`);
+  for (const field of ["x", "y", "z"]) {
+    if (typeof point[field] !== "number" || !Number.isFinite(point[field])) {
+      throw new Error(`${path}.${field} must be a finite number`);
+    }
+  }
+}
+
+function assertWorldBounds(bounds, path) {
+  assertWorldPoint(bounds, path);
+  for (const field of ["width", "depth"]) {
+    if (typeof bounds[field] !== "number" || !Number.isFinite(bounds[field]) || bounds[field] < 0) {
+      throw new Error(`${path}.${field} must be a non-negative finite number`);
+    }
+  }
 }
 
 function roleStyle(role) {
@@ -45,6 +64,9 @@ function projectRoutes(document) {
     label: edge.label ?? null,
     visualRole: edge.visualRole ?? "default",
     points: clone(document.effectiveLayout.routes[edge.id].points),
+    worldPoints: routeToWorld(document.effectiveLayout.routes[edge.id].points, {
+      path: `routes.${edge.id}.points`,
+    }),
     style: roleStyle(edge.visualRole),
     coordinateSpace: "diagram",
     includeInExport: true,
@@ -62,6 +84,7 @@ function projectPhaseZones(document) {
         label: group.label ?? null,
         children: [...group.children],
         bounds: clone(layout.bounds),
+        worldBounds: diagramRectToWorld(layout.bounds, { path: `phaseZones.${group.id}.bounds` }),
         visualRole: group.visualRole ?? "phase-zone",
         style: { fillTone: "phase", borderStyle: "light", priority: 0 },
         coordinateSpace: "diagram",
@@ -72,17 +95,21 @@ function projectPhaseZones(document) {
 
 function projectAnnotations(document) {
   const artifact = artifactView(document);
-  return document.annotations.map((annotation) => ({
-    annotationId: annotation.id,
-    text: annotation.text,
-    visualRole: annotation.visualRole,
-    semanticAnchor: clone(annotation.anchor),
-    position: resolveAnnotationAnchor(annotation, artifact, document.effectiveLayout),
-    properties: clone(annotation.properties ?? {}),
-    coordinateSpace: "diagram",
-    includeInExport: true,
-    includeEditorHandles: false,
-  }));
+  return document.annotations.map((annotation) => {
+    const position = resolveAnnotationAnchor(annotation, artifact, document.effectiveLayout);
+    return {
+      annotationId: annotation.id,
+      text: annotation.text,
+      visualRole: annotation.visualRole,
+      semanticAnchor: clone(annotation.anchor),
+      position,
+      worldPosition: diagramToWorld(position, { path: `annotations.${annotation.id}.position` }),
+      properties: clone(annotation.properties ?? {}),
+      coordinateSpace: "diagram",
+      includeInExport: true,
+      includeEditorHandles: false,
+    };
+  });
 }
 
 /**
@@ -100,6 +127,7 @@ export function projectOverlays(document) {
     annotations: projectAnnotations(document),
     includeEditorChrome: false,
   };
+  assertOverlayProjection(result);
   return Object.freeze(result);
 }
 
@@ -110,7 +138,12 @@ export function assertOverlayProjection(overlays) {
   for (const collection of ["routes", "phaseZones", "annotations"]) {
     if (!Array.isArray(overlays[collection])) throw new Error(`overlay projection ${collection} must be an array`);
   }
+  overlays.routes.forEach((route, index) => {
+    if (!isRecord(route) || !Array.isArray(route.worldPoints)) throw new Error(`overlay projection routes[${index}].worldPoints must be an array`);
+    route.worldPoints.forEach((point, pointIndex) => assertWorldPoint(point, `routes[${index}].worldPoints[${pointIndex}]`));
+  });
+  overlays.phaseZones.forEach((zone, index) => assertWorldBounds(zone?.worldBounds, `phaseZones[${index}].worldBounds`));
+  overlays.annotations.forEach((annotation, index) => assertWorldPoint(annotation?.worldPosition, `annotations[${index}].worldPosition`));
   if (overlays.includeEditorChrome !== false) throw new Error("overlay projection must exclude editor chrome");
   return overlays;
 }
-

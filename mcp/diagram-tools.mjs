@@ -4,6 +4,7 @@ import {
   assertDiagramArtifact,
   createDiagram,
 } from "../core/artifact-store.mjs";
+import { ERROR_CODES } from "../contracts/diagram-error.mjs";
 import {
   createCoreState,
   openCore,
@@ -56,6 +57,7 @@ function safeMessage(message) {
 }
 
 function errorCode(error) {
+  if (typeof error?.code === "string" && ERROR_CODES.has(error.code)) return error.code;
   const message = String(error?.message ?? error);
   if (/revision changed|revision conflict/i.test(message)) return "revision-conflict";
   if (/unsupported|path|input|could not be read/i.test(message)) return "invalid-tool-input";
@@ -131,16 +133,19 @@ export function createDiagramToolService({ rootDir = process.cwd() } = {}) {
       if (call.toolName === "diagram.create") return await create(call);
       return await save(call);
     } catch (error) {
+      const code = errorCode(error);
       return createToolError({
         toolName: call.toolName,
         requestId: call.requestId,
-        code: errorCode(error),
+        code,
         message: safeMessage(error.message ?? error),
-        fieldPath: errorField(call.toolName),
-        recoverable: true,
-        suggestedAction: errorCode(error) === "revision-conflict"
+        objectIds: Array.isArray(error.objectIds) ? error.objectIds : [],
+        fieldPath: error.fieldPath ?? errorField(call.toolName),
+        recoverable: typeof error.recoverable === "boolean" ? error.recoverable : true,
+        suggestedAction: error.suggestedAction ?? (code === "revision-conflict"
           ? "Reload the current revision before trying again."
-          : "Fix the input and retry the lifecycle operation.",
+          : "Fix the input and retry the lifecycle operation."),
+        cause: typeof error.cause === "string" || error.cause === null ? error.cause : null,
         revision: call.expectedRevision ?? null,
         effects: effects(call.toolName === "diagram.save" ? "write" : "read", safeEffectsPath(call.input.path), false),
       });

@@ -37,6 +37,9 @@ test("routes, phase zones and annotations share Diagram coordinates and view", a
   assert.equal(overlays.annotations.length, document.annotations.length);
   assert.equal(overlays.view.preset, "isometric");
   assert.deepEqual(overlays.routes[0].points, document.effectiveLayout.routes["edge-split"].points);
+  assert.deepEqual(overlays.routes[0].worldPoints[0], { x: 96, y: 0, z: 152 });
+  assert.deepEqual(overlays.phaseZones[0].worldBounds, { x: 18, y: 0, z: 92, width: 105, depth: 108 });
+  assert.deepEqual(overlays.annotations[0].worldPosition, { x: 22, y: 0, z: 24 });
   assert.equal(overlays.routes[0].includeInExport, true);
   assert.equal(overlays.annotations[0].includeEditorHandles, false);
 });
@@ -70,6 +73,27 @@ test("node and edge annotation positions follow Effective Layout", async () => {
   assert.notDeepEqual(secondEdgeNote.position, firstEdgeNote.position);
 });
 
+test("overlay world adapters carry node and route elevations without changing Diagram points", async () => {
+  const document = await readDocument();
+  const elevated = structuredClone(document);
+  elevated.effectiveLayout.nodes["stage-field"].elevation = 8;
+  elevated.effectiveLayout.routes["edge-connect"].points = [
+    { x: 242, y: 105, elevation: 3 },
+    { x: 280, y: 98, elevation: 7 },
+  ];
+
+  const overlays = projectOverlays(elevated);
+  const route = overlays.routes.find((candidate) => candidate.routeId === "edge-connect");
+  const annotation = overlays.annotations.find((candidate) => candidate.annotationId === "annotation-field");
+
+  assert.deepEqual(route.worldPoints, [
+    { x: 242, y: 3, z: 105 },
+    { x: 280, y: 7, z: 98 },
+  ]);
+  assert.equal(annotation.worldPosition.y, 8);
+  assert.deepEqual(route.points, elevated.effectiveLayout.routes["edge-connect"].points);
+});
+
 test("invalid route geometry blocks overlay projection", async () => {
   const document = await readDocument();
   const incomplete = structuredClone(document);
@@ -77,4 +101,3 @@ test("invalid route geometry blocks overlay projection", async () => {
 
   assert.throws(() => projectOverlays(incomplete), /Route edge-connect must contain at least two Diagram points/);
 });
-

@@ -25,6 +25,7 @@
     "metadata": { "$ref": "#/$defs/metadata" },
     "semantic": { "$ref": "#/$defs/semantic" },
     "composition": { "$ref": "#/$defs/composition" },
+    "exportSettings": { "$ref": "#/$defs/exportSettings" },
     "layout": { "$ref": "#/$defs/layout" },
     "annotations": {
       "type": "array",
@@ -204,6 +205,39 @@
         "azimuthDeg": { "type": "number" },
         "elevationDeg": { "type": "number" },
         "zoom": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "exportSettings": {
+      "description": "Persisted export-only settings. Browse camera session state is never stored here.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["camera"],
+      "properties": {
+        "camera": { "$ref": "#/$defs/camera" }
+      }
+    },
+    "camera": {
+      "description": "A canonical orthographic isometric camera in Diagram composition coordinates.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection", "preset", "azimuthDeg", "elevationDeg", "target", "orthoScale"],
+      "properties": {
+        "projection": { "const": "orthographic" },
+        "preset": { "const": "isometric" },
+        "azimuthDeg": { "type": "number", "minimum": 0, "exclusiveMaximum": 360 },
+        "elevationDeg": { "type": "number", "minimum": 20, "maximum": 70 },
+        "target": { "$ref": "#/$defs/cameraTarget" },
+        "orthoScale": { "type": "number", "minimum": 0.55, "maximum": 2.4 }
+      }
+    },
+    "cameraTarget": {
+      "description": "Composition-space target; browser screen pixels are not persisted.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
       }
     },
     "layout": {

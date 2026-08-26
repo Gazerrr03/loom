@@ -41,6 +41,7 @@ test("RenderDocument resolves effective layout without exposing source layers", 
     "components",
     "composition",
     "effectiveLayout",
+    "exportCamera",
     "presentation",
     "revision",
     "semantic",
@@ -50,11 +51,43 @@ test("RenderDocument resolves effective layout without exposing source layers", 
   assert.equal(document.effectiveLayout.nodes["stage-workbench"].x, 522);
   assert.equal(document.effectiveLayout.nodes["stage-workbench"].y, 35);
   assert.equal(document.effectiveLayout.view.projection, "orthographic");
+  assert.deepEqual(document.exportCamera, {
+    projection: "orthographic",
+    preset: "isometric",
+    azimuthDeg: 45,
+    elevationDeg: 35.264,
+    target: { x: 0, y: 0 },
+    orthoScale: 1,
+  });
   assert.equal(document.components["flovvas-workbench"].id, "flovvas-workbench");
   assert.equal(document.assets["asset-card-slab"].uri, "loom://builtin/primitive/card-slab");
   assert.equal("layout" in document, false);
   assert.equal("generated" in document.effectiveLayout, false);
   assert.equal("overrides" in document.effectiveLayout, false);
+});
+
+test("RenderDocument resolves legacy view modes to one canonical export camera", async () => {
+  const artifact = await readFixture();
+  artifact.composition.defaultView = {
+    ...artifact.composition.defaultView,
+    projection: "perspective",
+    preset: "legacy-perspective",
+  };
+
+  const document = createRenderDocument(artifact, {
+    revision: "sha256:legacy-view-fallback",
+    components: await readComponents(),
+  });
+
+  assert.deepEqual(document.exportCamera, {
+    projection: "orthographic",
+    preset: "isometric",
+    azimuthDeg: 45,
+    elevationDeg: 35.264,
+    target: { x: 0, y: 0 },
+    orthoScale: 1,
+  });
+  assert.equal(document.effectiveLayout.view.projection, "perspective");
 });
 
 test("RenderDocument is isolated and read-only for an Adapter", async () => {

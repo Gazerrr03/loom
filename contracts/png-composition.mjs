@@ -1,4 +1,5 @@
 import { assertComposition } from "./composition.mjs";
+import { assertCamera } from "./camera.mjs";
 import { assertPngCaptureRequest } from "./png-capture.mjs";
 
 const COMPOSITION_FORMAT = "loom.png.composition";
@@ -76,6 +77,9 @@ function assertOverlayRevision(overlays, request) {
   if (overlays?.view !== undefined && JSON.stringify(overlays.view) !== JSON.stringify(request.view)) {
     throw new Error("PNG composition overlay view does not match the capture request");
   }
+  if (overlays?.camera !== undefined && JSON.stringify(overlays.camera) !== JSON.stringify(request.camera)) {
+    throw new Error("PNG composition overlay camera does not match the capture request");
+  }
 }
 
 function assertSafeAreaGuides(guides, path) {
@@ -92,7 +96,8 @@ function assertSafeAreaGuides(guides, path) {
 
 /**
  * Build the exact layer set that a PNG renderer may composite. Editor chrome
- * is deliberately not representable in this value.
+ * is deliberately not representable in this value. `camera` is the only
+ * camera authority; `view` is retained as compatibility/layout metadata.
  */
 export function createPngComposition(request, { sceneNodes = null, overlays = null, composition = null } = {}) {
   assertPngCaptureRequest(request);
@@ -125,6 +130,7 @@ export function createPngComposition(request, { sceneNodes = null, overlays = nu
     schemaVersion: SCHEMA_VERSION,
     artifactId: request.artifactId,
     revision: request.revision,
+    camera: clone(request.camera),
     view: clone(request.view),
     layers: [...LAYER_NAMES],
     scene,
@@ -143,6 +149,7 @@ export function assertPngComposition(composition) {
   if (composition.schemaVersion !== SCHEMA_VERSION) throw new Error(`Unsupported PNG composition schemaVersion: ${String(composition.schemaVersion)}`);
   assertStableId(composition.artifactId, "PNG composition.artifactId");
   if (typeof composition.revision !== "string" || composition.revision.length === 0) throw new Error("PNG composition.revision must be non-empty");
+  assertCamera(composition.camera, "PNG composition.camera");
   if (!isRecord(composition.view)) throw new Error("PNG composition.view must be an object");
   assertLayerNameList(composition.layers, "PNG composition.layers");
   for (const layerName of ["scene", "routes", "phaseZones", "annotations", "safeAreaGuides", "editorChrome"]) {

@@ -1,5 +1,7 @@
 import { assertComposition } from "./composition.mjs";
+import { assertCamera } from "./camera.mjs";
 import { assertDiagramEnvelope } from "./diagram-envelope.mjs";
+import { assertExportSettings, resolveExportCamera } from "./export-settings.mjs";
 import { mergeEffectiveLayout } from "./layout.mjs";
 import { assertLayout } from "./layout.mjs";
 import { assertPersistedDiagramBoundary } from "./persisted-boundary.mjs";
@@ -12,6 +14,7 @@ const RENDER_DOCUMENT_KEYS = [
   "revision",
   "semantic",
   "composition",
+  "exportCamera",
   "effectiveLayout",
   "annotations",
   "presentation",
@@ -45,6 +48,7 @@ function assertArtifact(artifact) {
   assertPersistedDiagramBoundary(artifact);
   assertSemanticGraph(artifact.semantic);
   assertComposition(artifact.composition);
+  assertExportSettings(artifact.exportSettings);
   assertLayout(artifact.layout);
   assertPresentationBoundary({
     semantic: artifact.semantic,
@@ -114,6 +118,7 @@ function assertRenderDocumentShape(document) {
   if (!isRecord(document.effectiveLayout.view)) {
     throw new Error("RenderDocument effectiveLayout.view must be an object");
   }
+  assertCamera(document.exportCamera, "RenderDocument.exportCamera");
   assertMap(document.components, "RenderDocument components");
   assertMap(document.assets, "RenderDocument assets");
   return document;
@@ -128,7 +133,7 @@ function assertRenderDocumentShape(document) {
  */
 export function createRenderDocument(
   artifact,
-  { revision, components = [], assets = artifact?.assets ?? [] } = {},
+  { revision, components = [], assets = artifact?.assets ?? [], exportCamera } = {},
 ) {
   assertArtifact(artifact);
   assertRevision(revision);
@@ -147,6 +152,7 @@ export function createRenderDocument(
     revision,
     semantic: clone(artifact.semantic),
     composition: clone(artifact.composition),
+    exportCamera: resolveExportCamera(artifact, exportCamera),
     effectiveLayout: clone(mergeEffectiveLayout(artifact.layout, artifact.composition.defaultView)),
     annotations: clone(artifact.annotations),
     presentation: clone(artifact.presentation),

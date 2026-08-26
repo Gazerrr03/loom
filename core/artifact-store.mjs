@@ -4,6 +4,7 @@ import { dirname, join, basename } from "node:path";
 
 import { assertComposition } from "../contracts/composition.mjs";
 import { assertDiagramEnvelope } from "../contracts/diagram-envelope.mjs";
+import { assertExportSettings } from "../contracts/export-settings.mjs";
 import { DiagramContractError } from "../contracts/diagram-error.mjs";
 import { assertLayout } from "../contracts/layout.mjs";
 import { assertPersistedDiagramBoundary } from "../contracts/persisted-boundary.mjs";
@@ -27,6 +28,7 @@ export function assertDiagramArtifact(artifact) {
   assertPersistedDiagramBoundary(artifact);
   assertSemanticGraph(artifact.semantic);
   assertComposition(artifact.composition);
+  assertExportSettings(artifact.exportSettings);
   assertLayout(artifact.layout);
   assertPresentationBoundary({
     semantic: artifact.semantic,

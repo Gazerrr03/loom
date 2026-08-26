@@ -34,7 +34,7 @@ test("view values clamp to safe bounds and reject non-finite input", () => {
   const view = createWorkspaceView({ pan: { x: 99999, y: -99999 }, zoom: 999, azimuthDeg: -40, elevationDeg: 100 });
   assert.deepEqual(view.getState().pan, { x: LIMITS.pan.max, y: LIMITS.pan.min });
   assert.equal(view.getState().zoom, LIMITS.zoom.max);
-  assert.equal(view.getState().azimuthDeg, LIMITS.azimuthDeg.min);
+  assert.equal(view.getState().azimuthDeg, 320);
   assert.equal(view.getState().elevationDeg, LIMITS.elevationDeg.max);
   assert.throws(() => view.panBy({ x: Number.NaN, y: 0 }), /finite number/);
   assert.throws(() => view.zoomBy(0), /greater than zero/);

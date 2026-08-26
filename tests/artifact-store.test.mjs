@@ -126,3 +126,20 @@ test("persisted Renderer camera state is blocked and load preserves the diagnost
       && error.fieldPath === "artifact.composition",
   );
 });
+
+test("exportSettings aliases remain inside the persisted boundary scan", async () => {
+  const fixture = await readFixture();
+
+  for (const alias of ["export-settings", "export_settings", "EXPORTSETTINGS"]) {
+    const candidate = structuredClone(fixture);
+    candidate[alias] = { camera: { runtime: {} } };
+
+    assert.throws(
+      () => createDiagram(candidate),
+      (error) => error instanceof DiagramContractError
+        && error.code === "renderer-state-not-persistable"
+        && error.recoverable === false,
+      alias,
+    );
+  }
+});

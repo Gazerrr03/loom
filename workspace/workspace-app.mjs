@@ -11,6 +11,11 @@ import {
   saveWorkspaceWithAdapter,
 } from "./workspace-storage.mjs";
 import {
+  assertExportSettings,
+  resolveExportCamera,
+  withExportCamera,
+} from "../contracts/export-settings.mjs";
+import {
   commitInspectorTransform,
   previewInspectorTransform,
 } from "./transform-inspector.mjs";
@@ -91,6 +96,7 @@ const state = {
   lastExport: null,
   transformSequence: 0,
   componentSequence: 0,
+  exportCameraSequence: 0,
   viewController: createWorkspaceView(),
   viewPointer: null,
   routeEditor: null,
@@ -229,6 +235,7 @@ function assertArtifact(value) {
     if (route?.points !== undefined) assertOrthogonalRoute(route.points, `layout.overrides.routes.${edgeId}.points`);
   }
   assertPersistedDiagramBoundary(value);
+  assertExportSettings(value.exportSettings);
   return value;
 }
 
@@ -318,6 +325,18 @@ function commitArtifactHistory(artifact, { transactionId, kind = "workspace.edit
   refreshArtifactControllers();
   setStatus(state.dirty ? "dirty" : "ready", message);
   return nextHistory;
+}
+
+function commitExportCamera(camera) {
+  if (!state.artifact) throw new Error("Cannot set an export camera without a Diagram");
+  const artifact = withExportCamera(state.artifact, camera);
+  const transactionId = `workspace-export-camera-${++state.exportCameraSequence}`;
+  commitArtifactHistory(artifact, {
+    transactionId,
+    kind: "workspace.export-camera",
+    message: "已更新导出相机设置",
+  });
+  return resolveExportCamera(state.artifact);
 }
 
 function project(point) {
@@ -954,7 +973,7 @@ function setArtifact(artifact, fileName = "diagram.json") {
   state.activeRoutePointerId = null;
   state.dragging = false;
   state.moved = false;
-  state.viewController.reset();
+  state.viewController.setDefaultView(state.artifact.composition.defaultView);
   state.viewPointer = null;
   state.componentError = null;
   state.lastExport = null;
@@ -1092,6 +1111,8 @@ async function loadUrl(url, fileName = url.split("/").at(-1)) {
     state.activeRoutePointerId = null;
     state.dragging = false;
     state.moved = false;
+    state.viewController.setDefaultView();
+    state.viewPointer = null;
     setStatus("error", "读取失败", error instanceof Error ? error : new Error(String(error)));
     render();
   }
@@ -1582,6 +1603,10 @@ window.LoomWorkspace = Object.freeze({
   getAnnotationState: () => state.annotationEditor?.getState() ?? null,
   getHistoryState: () => state.history ? clone(state.history) : null,
   getViewState: () => state.viewController.getState(),
+  getCameraState: () => state.viewController.getCamera(),
+  getExportCamera: () => state.artifact ? resolveExportCamera(state.artifact) : null,
+  setExportCamera: (camera) => commitExportCamera(camera),
+  setExportCameraFromView: () => commitExportCamera(state.viewController.getCamera()),
   loadArtifact: (artifact, fileName) => setArtifact(artifact, fileName),
   loadUrl,
   selectNode,

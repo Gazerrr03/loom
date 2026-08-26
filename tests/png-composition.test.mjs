@@ -60,6 +60,7 @@ test("composition contains Scene, Route, Phase Zone and Annotation layers at one
   const composition = createPngComposition(request, { sceneNodes, overlays, composition: artifact.composition });
   assertPngComposition(composition);
   assert.equal(composition.revision, document.revision);
+  assert.deepEqual(composition.camera, request.camera);
   assert.equal(composition.scene.length, document.semantic.nodes.length);
   assert.equal(composition.routes.length, document.semantic.edges.length);
   assert.equal(composition.phaseZones.length, 4);
@@ -95,6 +96,10 @@ test("safe-area guides are opt-in and overlay revision/view mismatches fail", as
   assert.throws(
     () => createPngComposition(request, { sceneNodes, overlays: { ...overlays, view: { ...overlays.view, zoom: 2 } }, composition: artifact.composition }),
     /overlay view/,
+  );
+  assert.throws(
+    () => createPngComposition(request, { sceneNodes, overlays: { ...overlays, camera: { ...request.camera, azimuthDeg: 90 } }, composition: artifact.composition }),
+    /overlay camera/,
   );
   assert.throws(() => createPngComposition(request, { sceneNodes, overlays }), /composition is required/);
 });

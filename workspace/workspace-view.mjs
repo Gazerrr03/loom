@@ -1,15 +1,22 @@
+import {
+  assertCamera,
+  CAMERA_DEFAULTS,
+  CAMERA_LIMITS,
+  normalizeCamera,
+} from "../contracts/camera.mjs";
+
 const DEFAULT_VIEW = Object.freeze({
   pan: Object.freeze({ x: 0, y: 0 }),
-  zoom: 1,
-  azimuthDeg: 45,
-  elevationDeg: 35.264,
+  zoom: CAMERA_DEFAULTS.orthoScale,
+  azimuthDeg: CAMERA_DEFAULTS.azimuthDeg,
+  elevationDeg: CAMERA_DEFAULTS.elevationDeg,
 });
 
 const LIMITS = Object.freeze({
   pan: Object.freeze({ min: -1200, max: 1200 }),
-  zoom: Object.freeze({ min: 0.55, max: 2.4 }),
-  azimuthDeg: Object.freeze({ min: 0, max: 360 }),
-  elevationDeg: Object.freeze({ min: 20, max: 70 }),
+  zoom: CAMERA_LIMITS.orthoScale,
+  azimuthDeg: CAMERA_LIMITS.azimuthDeg,
+  elevationDeg: CAMERA_LIMITS.elevationDeg,
 });
 
 const DEFAULT_BASIS = Object.freeze({
@@ -31,6 +38,11 @@ function assertFinite(value, path) {
 
 function clamp(value, range) {
   return Math.min(range.max, Math.max(range.min, value));
+}
+
+function wrapAzimuth(value) {
+  const wrapped = ((value % LIMITS.azimuthDeg.max) + LIMITS.azimuthDeg.max) % LIMITS.azimuthDeg.max;
+  return Object.is(wrapped, -0) ? 0 : wrapped;
 }
 
 function normalizePan(pan) {
@@ -55,8 +67,15 @@ function normalizeView(view = {}) {
   return {
     pan,
     zoom: clamp(zoom, LIMITS.zoom),
-    azimuthDeg: clamp(azimuthDeg, LIMITS.azimuthDeg),
+    azimuthDeg: wrapAzimuth(azimuthDeg),
     elevationDeg: clamp(elevationDeg, LIMITS.elevationDeg),
+  };
+}
+
+function basisProjection(basis, target) {
+  return {
+    x: basis.xFromX * target.x + basis.xFromY * target.y,
+    y: basis.yFromX * target.x + basis.yFromY * target.y,
   };
 }
 
@@ -88,9 +107,50 @@ export function viewBasis(view = DEFAULT_VIEW) {
   };
 }
 
+/** Convert a session view into the stable, composition-space camera value. */
+export function cameraFromWorkspaceView(view = DEFAULT_VIEW) {
+  const normalized = normalizeView(view);
+  const basis = viewBasis(normalized);
+  const determinant = basis.xFromX * basis.yFromY - basis.xFromY * basis.yFromX;
+  const projectedTarget = {
+    x: -normalized.pan.x / normalized.zoom,
+    y: -normalized.pan.y / normalized.zoom,
+  };
+  const target = {
+    x: (projectedTarget.x * basis.yFromY - projectedTarget.y * basis.xFromY) / determinant,
+    y: (basis.xFromX * projectedTarget.y - basis.yFromX * projectedTarget.x) / determinant,
+  };
+  return assertCamera({
+    projection: CAMERA_DEFAULTS.projection,
+    preset: CAMERA_DEFAULTS.preset,
+    azimuthDeg: normalized.azimuthDeg,
+    elevationDeg: normalized.elevationDeg,
+    target,
+    orthoScale: normalized.zoom,
+  });
+}
+
+/** Convert a canonical camera into the current browser's ephemeral view shape. */
+export function workspaceViewFromCamera(camera) {
+  const normalized = normalizeCamera(camera);
+  const view = {
+    pan: { x: 0, y: 0 },
+    zoom: normalized.orthoScale,
+    azimuthDeg: normalized.azimuthDeg,
+    elevationDeg: normalized.elevationDeg,
+  };
+  const projectedTarget = basisProjection(viewBasis(view), normalized.target);
+  view.pan = {
+    x: -normalized.orthoScale * projectedTarget.x,
+    y: -normalized.orthoScale * projectedTarget.y,
+  };
+  return normalizeView(view);
+}
+
 /** Keep camera navigation independent from the canonical Diagram Artifact. */
 export function createWorkspaceView(initial = {}) {
-  let current = normalizeView(initial);
+  let baseline = normalizeView(initial);
+  let current = clone(baseline);
 
   function state() {
     return clone(current);
@@ -98,6 +158,17 @@ export function createWorkspaceView(initial = {}) {
 
   function normalizeAndSet(patch) {
     current = normalizeView({ ...current, ...patch });
+    return state();
+  }
+
+  function setDefaultView(view = DEFAULT_VIEW) {
+    baseline = normalizeView(view);
+    current = clone(baseline);
+    return state();
+  }
+
+  function setCamera(camera) {
+    current = workspaceViewFromCamera(camera);
     return state();
   }
 
@@ -142,12 +213,15 @@ export function createWorkspaceView(initial = {}) {
   }
 
   function reset() {
-    current = normalizeView(DEFAULT_VIEW);
+    current = clone(baseline);
     return state();
   }
 
   return Object.freeze({
     getState: state,
+    getCamera: () => cameraFromWorkspaceView(current),
+    setCamera,
+    setDefaultView,
     setPan,
     panBy,
     zoomBy,

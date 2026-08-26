@@ -11,6 +11,7 @@ import {
   serializeWorkspaceArtifact,
 } from "../workspace/workspace-storage.mjs";
 import { importUserGlbReference } from "../workspace/component-panel.mjs";
+import { withExportCamera } from "../contracts/export-settings.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -68,6 +69,8 @@ test("PNG plan binds Effective Layout to a two-page A4 capture and excludes edit
   assert.equal(plan.preset.heightMm, 210);
   assert.equal(plan.preset.widthPx, 7016);
   assert.equal(plan.preset.heightPx, 2480);
+  assert.deepEqual(plan.request.camera, plan.document.exportCamera);
+  assert.deepEqual(plan.request.camera.target, { x: 0, y: 0 });
   assert.deepEqual(plan.request.layers, ["scene", "routes", "phaseZones", "annotations"]);
   assert.equal(plan.request.options.includeEditorChrome, false);
   assert.deepEqual(plan.composition.editorChrome, []);
@@ -96,10 +99,50 @@ test("PNG capture adapter receives a revision-bound request plus the exact compo
     },
   });
   assert.equal(received.request.revision, "sha256:golden-case");
+  assert.deepEqual(received.request.camera, plan.document.exportCamera);
   assert.deepEqual(received.composition.editorChrome, []);
   assert.equal(receipt.revision, "sha256:golden-case");
   assert.equal(receipt.widthPx, 7016);
   assert.equal(receipt.heightPx, 2480);
+});
+
+test("PNG planning uses the persisted export camera rather than a Workspace view snapshot", async () => {
+  const [artifact, catalog] = await Promise.all([
+    readJson("examples/flovvas-massing.diagram.json"),
+    readJson("examples/flovvas-template-catalog.json"),
+  ]);
+  const exported = withExportCamera(artifact, {
+    projection: "orthographic",
+    preset: "isometric",
+    azimuthDeg: 315,
+    elevationDeg: 40,
+    target: { x: 28, y: -16 },
+    orthoScale: 1.25,
+  });
+  const plan = await createWorkspacePngPlan(exported, { catalog: catalog.templates });
+  assert.deepEqual(plan.document.exportCamera, exported.exportSettings.camera);
+  assert.deepEqual(plan.request.camera, exported.exportSettings.camera);
+  assert.deepEqual(plan.request.view, artifact.composition.defaultView);
+});
+
+test("identical Diagram, camera, and export settings produce an identical capture plan", async () => {
+  const [artifact, catalog] = await Promise.all([
+    readJson("examples/flovvas-massing.diagram.json"),
+    readJson("examples/flovvas-template-catalog.json"),
+  ]);
+  const exported = withExportCamera(artifact, {
+    projection: "orthographic",
+    preset: "isometric",
+    azimuthDeg: 135,
+    elevationDeg: 32,
+    target: { x: -18, y: 24 },
+    orthoScale: 0.8,
+  });
+  const first = await createWorkspacePngPlan(exported, { catalog: catalog.templates });
+  const second = await createWorkspacePngPlan(exported, { catalog: catalog.templates });
+  assert.deepEqual(second.document.exportCamera, first.document.exportCamera);
+  assert.deepEqual(second.request, first.request);
+  assert.deepEqual(second.composition, first.composition);
 });
 
 test("unconfirmed GLB references block PNG planning and identify the asset", async () => {

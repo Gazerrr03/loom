@@ -60,6 +60,19 @@ test("Workspace Canvas exposes view-only navigation without coupling it to Artif
   assert.doesNotMatch(viewModule, /from\s+["']node:/);
 });
 
+test("Workspace exposes separate browse/export camera boundaries", () => {
+  assert.match(appModule, /getCameraState/);
+  assert.match(appModule, /getExportCamera/);
+  assert.match(appModule, /setExportCamera: \(camera\) => commitExportCamera/);
+  assert.match(appModule, /setExportCameraFromView: \(\) => commitExportCamera/);
+  const viewActions = appModule.slice(appModule.indexOf("function handleViewAction"), appModule.indexOf("function handleKeyDown"));
+  assert.doesNotMatch(viewActions, /commitArtifactHistory|commitExportCamera|withExportCamera/);
+  const exportHandler = appModule.slice(appModule.indexOf("async function handleExport"), appModule.indexOf("async function loadUrl"));
+  assert.doesNotMatch(exportHandler, /setExportCameraFromView|viewController\.getCamera|commitExportCamera/);
+  assert.match(appModule, /视图已更新 · Diagram 未修改/);
+  assert.match(appModule, /已更新导出相机设置/);
+});
+
 test("Workspace Canvas exposes route selection and one-shot control-point commit", () => {
   assert.match(appModule, /data-route-edge-id/);
   assert.match(appModule, /routeHandleFromEvent/);

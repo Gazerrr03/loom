@@ -1,4 +1,5 @@
 import { createDiagramError } from "./diagram-error.mjs";
+import { assertCamera } from "./camera.mjs";
 import { assertRenderDocument } from "./render-document.mjs";
 
 const CAPTURE_FORMAT = "loom.png.capture-request";
@@ -61,10 +62,18 @@ function assertLayerList(layers, path) {
   }
 }
 
-/** Build the renderer-independent input for one PNG capture. */
-export function createPngCaptureRequest(document, options) {
+/**
+ * Build the renderer-independent input for one PNG capture. The camera is
+ * separate from Effective Layout so a browser session cannot silently become
+ * the export source. Callers may provide an explicit canonical camera when a
+ * future export-setting editor has one; otherwise RenderDocument.exportCamera
+ * is authoritative.
+ */
+export function createPngCaptureRequest(document, options, { camera } = {}) {
   assertRenderDocument(document);
   const normalizedOptions = normalizeOptions(options);
+  const exportCamera = camera === undefined ? document.exportCamera : camera;
+  assertCamera(exportCamera, "PNG capture request.camera");
   if (normalizedOptions.range === "page" && !document.composition.pages.some((page) => page.id === normalizedOptions.pageId)) {
     throw new Error(`PNG capture page does not resolve: ${normalizedOptions.pageId}`);
   }
@@ -73,6 +82,7 @@ export function createPngCaptureRequest(document, options) {
     schemaVersion: SCHEMA_VERSION,
     artifactId: document.artifactId,
     revision: document.revision,
+    camera: clone(exportCamera),
     view: clone(document.effectiveLayout.view),
     effectiveLayout: clone(document.effectiveLayout),
     layers: [...LAYERS],
@@ -86,6 +96,7 @@ export function assertPngCaptureRequest(request) {
   if (request.schemaVersion !== SCHEMA_VERSION) throw new Error(`Unsupported PNG capture schemaVersion: ${String(request.schemaVersion)}`);
   assertStableId(request.artifactId, "PNG capture request.artifactId");
   if (typeof request.revision !== "string" || request.revision.length === 0) throw new Error("PNG capture request.revision must be non-empty");
+  assertCamera(request.camera, "PNG capture request.camera");
   if (!isRecord(request.view) || !isRecord(request.effectiveLayout)) throw new Error("PNG capture request must include view and effectiveLayout");
   assertLayerList(request.layers, "PNG capture request.layers");
   assertOptions(request.options);

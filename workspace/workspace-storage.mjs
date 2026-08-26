@@ -1,6 +1,7 @@
 import { createDiagramError } from "../contracts/diagram-error.mjs";
 import { assertComposition } from "../contracts/composition.mjs";
 import { assertDiagramEnvelope } from "../contracts/diagram-envelope.mjs";
+import { assertExportSettings } from "../contracts/export-settings.mjs";
 import { assertLayout } from "../contracts/layout.mjs";
 import { assertPresentationBoundary } from "../contracts/presentation.mjs";
 import { assertSemanticGraph } from "../contracts/semantic-graph.mjs";
@@ -18,6 +19,7 @@ function assertArtifact(artifact) {
   assertDiagramEnvelope(artifact);
   assertSemanticGraph(artifact.semantic);
   assertComposition(artifact.composition);
+  assertExportSettings(artifact.exportSettings);
   assertLayout(artifact.layout);
   assertPresentationBoundary({
     semantic: artifact.semantic,
@@ -197,7 +199,7 @@ function assertExportableAssets(artifact) {
 /** Build the immutable, renderer-independent export plan for the current draft. */
 export async function createWorkspacePngPlan(
   artifact,
-  { revision, catalog = [], sceneNodes, overlays, range = "spread", pageId, dpi = 300 } = {},
+  { revision, catalog = [], sceneNodes, overlays, range = "spread", pageId, dpi = 300, exportCamera } = {},
 ) {
   assertArtifact(artifact);
   assertExportableAssets(artifact);
@@ -206,6 +208,7 @@ export async function createWorkspacePngPlan(
     revision: resolvedRevision,
     components: componentMapFor(artifact, catalog),
     assets: assetMapFor(artifact),
+    exportCamera,
   });
   const preset = createPngExportPreset(document.composition, { range, pageId, dpi });
   const request = createPngCaptureRequest(document, captureOptionsFromPreset(preset));

@@ -50,6 +50,7 @@ test("capture request carries Effective Layout, view, revision and export layers
   assertPngCaptureRequest(request);
   assert.equal(request.artifactId, document.artifactId);
   assert.equal(request.revision, "sha256:golden-case-v1");
+  assert.deepEqual(request.camera, document.exportCamera);
   assert.deepEqual(request.effectiveLayout, document.effectiveLayout);
   assert.deepEqual(request.layers, ["scene", "routes", "phaseZones", "annotations"]);
   assert.equal(request.options.includeEditorChrome, false);
@@ -67,6 +68,25 @@ test("page capture validates the requested page and rejects editor chrome or inv
   assert.throws(() => createPngCaptureRequest(document, options({ range: "page", pageId: "missing-page" })), /page does not resolve/);
   assert.throws(() => createPngCaptureRequest(document, options({ includeEditorChrome: true })), /never includes editor chrome/);
   assert.throws(() => createPngCaptureRequest(document, options({ widthPx: 0 })), /widthPx/);
+});
+
+test("capture request accepts an explicit export camera and rejects a non-canonical camera", async () => {
+  const document = await readDocument();
+  const camera = {
+    ...document.exportCamera,
+    azimuthDeg: 315,
+    target: { x: 24, y: -12 },
+  };
+  const request = createPngCaptureRequest(document, options(), { camera });
+  assert.deepEqual(request.camera, camera);
+  assert.throws(
+    () => createPngCaptureRequest(document, options(), { camera: { ...camera, elevationDeg: 90 } }),
+    /elevationDeg/,
+  );
+  assert.throws(
+    () => createPngCaptureRequest(document, options(), { camera: null }),
+    /camera must be an object/,
+  );
 });
 
 test("adapter capture returns actual dimensions and the same Artifact revision", async () => {
@@ -92,6 +112,7 @@ test("adapter capture returns actual dimensions and the same Artifact revision",
   assert.equal(receipt.heightPx, 900);
   assert.equal(receipt.pixelRatio, 2);
   assert.equal(received.revision, document.revision);
+  assert.deepEqual(received.camera, document.exportCamera);
   assert.equal(document.effectiveLayout.nodes["stage-line"].x, 70);
 });
 

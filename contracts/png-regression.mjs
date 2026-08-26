@@ -33,6 +33,7 @@ function structuralInput({ request, preset, composition }) {
     artifactId: request.artifactId,
     revision: request.revision,
     presetId: preset.presetId,
+    camera: request.camera,
     range: preset.range,
     widthPx: request.options.widthPx,
     heightPx: request.options.heightPx,
@@ -66,6 +67,7 @@ export function createPngRegressionEvidence({ request, preset, composition, rece
   assertPngExportPreset(preset);
   assertPngComposition(composition);
   if (composition.artifactId !== request.artifactId || composition.revision !== request.revision) throw new Error("PNG regression composition identity must match request");
+  if (JSON.stringify(composition.camera) !== JSON.stringify(request.camera)) throw new Error("PNG regression composition camera must match request");
   assertPngExportReceipt(receipt);
   if (receipt.revision !== request.revision) throw new Error("PNG regression receipt revision must match request revision");
   if (receipt.artifactId !== request.artifactId || receipt.pixelRatio !== request.options.pixelRatio) throw new Error("PNG regression receipt identity or pixelRatio does not match request");

@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
+import { CAMERA_DEFAULTS } from "../contracts/camera.mjs";
 import {
   createIcraftPlayerAdapter,
   DEFAULT_CAPABILITIES,
@@ -21,6 +22,7 @@ function renderDocument() {
     revision: "sha256:before",
     semantic: { nodes: [], edges: [], groups: [] },
     composition: {},
+    exportCamera: structuredClone(CAMERA_DEFAULTS),
     effectiveLayout: { nodes: {}, routes: {}, groups: {}, view: {} },
     annotations: [],
     presentation: {},

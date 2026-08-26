@@ -88,6 +88,14 @@ test("same revision, preset and structure compare as stable; intended structural
   assert.equal(comparison.status, "changed");
   assert.ok(comparison.differences.includes("structuralFingerprint"));
   assert.equal(comparison.pixelDiffBlocking, false);
+
+  const changedCamera = { ...values.request.camera, azimuthDeg: 90 };
+  const cameraChanged = createPngRegressionEvidence({
+    ...values,
+    request: { ...values.request, camera: changedCamera },
+    composition: { ...values.composition, camera: changedCamera },
+  });
+  assert.equal(comparePngRegressionEvidence(first, cameraChanged).status, "changed");
 });
 
 test("author checks can record a pass or fail without changing the technical fingerprint policy", async () => {

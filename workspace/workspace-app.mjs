@@ -21,6 +21,7 @@ import {
 import { createRouteEditor } from "./route-editor.mjs";
 import { createAnnotationEditor } from "./annotation-editor.mjs";
 import { resolveAnnotationAnchor } from "../contracts/anchors.mjs";
+import { assertPersistedDiagramBoundary } from "../contracts/persisted-boundary.mjs";
 import {
   canRedoHistory,
   canUndoHistory,
@@ -219,6 +220,7 @@ function assertArtifact(value) {
   if (typeof value.id !== "string" || value.id.length === 0) throw new Error("Diagram id 缺失");
   if (!value.semantic || !Array.isArray(value.semantic.nodes) || !Array.isArray(value.semantic.edges) || !Array.isArray(value.semantic.groups)) throw new Error("Diagram semantic graph 不完整");
   if (!value.composition || !value.layout?.generated?.nodes || !value.layout?.generated?.routes || !value.layout?.generated?.groups) throw new Error("Diagram composition 或 layout 不完整");
+  assertPersistedDiagramBoundary(value);
   return value;
 }
 
@@ -293,11 +295,11 @@ function commitArtifactHistory(artifact, { transactionId, kind = "workspace.edit
 }
 
 function project(point) {
-  const z = point.z ?? point.elevation ?? 0;
-  return currentViewTransform().diagramToScreen(point, { z });
+  return currentViewTransform().diagramToScreen(point);
 }
 
 function rotateDiagramPoint(point, center, rotationYDeg = 0) {
+  // Diagram x/y is the world X/Z footprint, so this is a world-Y yaw.
   const radians = rotationYDeg * Math.PI / 180;
   const cos = Math.cos(radians);
   const sin = Math.sin(radians);
@@ -326,18 +328,18 @@ function polygon(points, fill, stroke = "none", strokeWidth = 0) {
   return shape;
 }
 
-function surfacePoints(rect, z = 0, projectPoint = project) {
+function surfacePoints(rect, elevation = 0, projectPoint = project) {
   return [
-    projectPoint({ x: rect.x, y: rect.y, z }),
-    projectPoint({ x: rect.x + rect.width, y: rect.y, z }),
-    projectPoint({ x: rect.x + rect.width, y: rect.y + rect.height, z }),
-    projectPoint({ x: rect.x, y: rect.y + rect.height, z }),
+    projectPoint({ x: rect.x, y: rect.y, elevation }),
+    projectPoint({ x: rect.x + rect.width, y: rect.y, elevation }),
+    projectPoint({ x: rect.x + rect.width, y: rect.y + rect.height, elevation }),
+    projectPoint({ x: rect.x, y: rect.y + rect.height, elevation }),
   ];
 }
 
-function extrudedRect(parent, rect, baseZ, height, tones, projectPoint = project) {
-  const base = surfacePoints(rect, baseZ, projectPoint);
-  const top = surfacePoints(rect, baseZ + height, projectPoint);
+function extrudedRect(parent, rect, baseElevation, height, tones, projectPoint = project) {
+  const base = surfacePoints(rect, baseElevation, projectPoint);
+  const top = surfacePoints(rect, baseElevation + height, projectPoint);
   parent.append(
     polygon([top[3], top[2], base[2], base[3]], tones.front, tones.edge, .65),
     polygon([top[1], top[2], base[2], base[1]], tones.side, tones.edge, .65),
@@ -359,12 +361,14 @@ function renderNode(parent, node, layout, index) {
   const projectNodePoint = (point) => project(rotateDiagramPoint(point, diagramCenter, layout.rotationYDeg ?? 0));
   const color = node.visualRole === "alternative" ? "#aaa49a" : node.visualRole === "external-input" ? "#c66a43" : STAGE_COLORS[index % STAGE_COLORS.length];
   const tones = faceTones(color);
-  const height = node.visualRole === "main-stage" ? 7 + (layout.elevation ?? 0) * .12 : 3;
+  // Elevation is the world-Y base position; it must not change the model's
+  // footprint or extrusion thickness.
+  const height = node.visualRole === "main-stage" ? 7 : 3;
   if (node.label === "FIELD") {
     extrudedRect(group, { ...rect, x: rect.x + 2, y: rect.y + 2, width: rect.width - 4, height: rect.height - 4 }, layout.elevation ?? 0, height, tones, projectNodePoint);
     for (let row = 1; row < 3; row += 1) {
-      const a = projectNodePoint({ x: rect.x + 4, y: rect.y + rect.height * row / 3, z: (layout.elevation ?? 0) + height + .2 });
-      const b = projectNodePoint({ x: rect.x + rect.width - 4, y: rect.y + rect.height * row / 3, z: (layout.elevation ?? 0) + height + .2 });
+      const a = projectNodePoint({ x: rect.x + 4, y: rect.y + rect.height * row / 3, elevation: (layout.elevation ?? 0) + height + .2 });
+      const b = projectNodePoint({ x: rect.x + rect.width - 4, y: rect.y + rect.height * row / 3, elevation: (layout.elevation ?? 0) + height + .2 });
       group.append(svg("line", { x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: tones.edge, "stroke-width": .55, opacity: .5 }));
     }
   } else if (node.label === "BRANCH") {
@@ -377,7 +381,7 @@ function renderNode(parent, node, layout, index) {
   } else {
     extrudedRect(group, rect, layout.elevation ?? 0, height, tones, projectNodePoint);
   }
-  const labelCenter = projectNodePoint({ x: diagramCenter.x, y: diagramCenter.y, z: (layout.elevation ?? 0) + height + 2 });
+  const labelCenter = projectNodePoint({ x: diagramCenter.x, y: diagramCenter.y, elevation: (layout.elevation ?? 0) + height + 2 });
   label(group, { x: labelCenter.x, y: labelCenter.y + 4 }, node.label, node.visualRole === "alternative" ? "#5e5d58" : "#26343b");
   if (state.selectedId === node.id) {
     const outline = surfacePoints(rect, (layout.elevation ?? 0) + height + 1, projectNodePoint);
@@ -1216,7 +1220,7 @@ function viewBoxPoint(event) {
 function diagramPointFromEvent(event, nodeId) {
   const layout = effectiveLayout(state.artifact).nodes[nodeId] ?? {};
   const transform = currentViewTransform();
-  return transform.screenToDiagram(viewBoxPoint(event), { z: layout.elevation ?? 0 });
+  return transform.screenToDiagram(viewBoxPoint(event), { elevation: layout.elevation ?? 0 });
 }
 
 function nodeIdFromEvent(event) {
@@ -1239,7 +1243,7 @@ function routeHandleFromEvent(event) {
 }
 
 function routePointFromEvent(event) {
-  return currentViewTransform().screenToDiagram(viewBoxPoint(event), { z: 0 });
+  return currentViewTransform().screenToDiagram(viewBoxPoint(event), { elevation: 0 });
 }
 
 function startRoutePointer(event, handle) {

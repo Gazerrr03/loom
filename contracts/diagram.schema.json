@@ -128,7 +128,7 @@
       }
     },
     "composition": {
-      "description": "Shared physical and viewing coordinate contract for layout, rendering, and export.",
+      "description": "Shared physical and viewing coordinate contract for layout, rendering, and export. Diagram x/y/elevation remains the renderer-independent storage form; Workspace derives its XZ/Y interpretation.",
       "type": "object",
       "additionalProperties": false,
       "required": ["unit", "canvas", "pages", "safeAreas", "readingDirection", "defaultView"],
@@ -274,7 +274,7 @@
       }
     },
     "nodeLayout": {
-      "description": "Node placement in canonical Diagram coordinates; x/y use composition.unit and elevation is a separate depth value.",
+      "description": "Node placement in canonical Diagram coordinates; x/y use composition.unit and map to world X/Z, while elevation maps to world Y.",
       "type": "object",
       "additionalProperties": false,
       "required": ["x", "y", "width", "height"],
@@ -306,7 +306,7 @@
       }
     },
     "point": {
-      "description": "Diagram-space point in composition.unit; it is not a screen pixel coordinate.",
+      "description": "Diagram-space point in composition.unit; x maps to world X, y maps to world Z, and elevation maps to world Y. It is not a screen pixel coordinate.",
       "type": "object",
       "additionalProperties": false,
       "required": ["x", "y"],
@@ -320,7 +320,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["points"],
-      "description": "A route control-point sequence in canonical Diagram coordinates. The sequence follows the semantic edge after node movement.",
+      "description": "A route control-point sequence in canonical Diagram coordinates. Each point maps to world X/Z/Y through the shared coordinate adapter; route shape rules are defined by the route contract.",
       "properties": {
         "points": {
           "type": "array",
@@ -333,7 +333,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["points"],
-      "description": "A Human Override route point set in canonical Diagram coordinates; a submitted gesture replaces the route atomically.",
+      "description": "A Human Override route point set in canonical Diagram coordinates; a submitted gesture replaces the route atomically and the shared coordinate adapter maps each point to world X/Z/Y.",
       "properties": {
         "points": {
           "type": "array",

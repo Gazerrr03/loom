@@ -29,6 +29,15 @@ function assertSceneNode(sceneNodeValue) {
       throw new Error(`Scene Node bounds.${field} must be finite`);
     }
   }
+  if (!isRecord(sceneNodeValue.worldBounds)) throw new Error("Scene Node worldBounds must be an object");
+  for (const field of ["x", "y", "z", "width", "depth"]) {
+    if (typeof sceneNodeValue.worldBounds[field] !== "number" || !Number.isFinite(sceneNodeValue.worldBounds[field])) {
+      throw new Error(`Scene Node worldBounds.${field} must be finite`);
+    }
+  }
+  if (sceneNodeValue.worldBounds.width < 0 || sceneNodeValue.worldBounds.depth < 0) {
+    throw new Error("Scene Node worldBounds must have non-negative size");
+  }
   for (const field of ["elevation", "rotationYDeg", "scale", "zIndex"]) {
     if (typeof sceneNodeValue[field] !== "number" || !Number.isFinite(sceneNodeValue[field])) {
       throw new Error(`Scene Node ${field} must be finite`);

@@ -18,6 +18,7 @@ async function readFixture() {
 test("Diagram-space hit test returns a stable node id and rejects empty space", async () => {
   const artifact = await readFixture();
   assert.equal(hitTestNode(artifact, { x: 80, y: 170 }), "stage-line");
+  assert.equal(hitTestNode(artifact, { x: 80, y: 170, elevation: 999 }), "stage-line");
   assert.equal(hitTestNode(artifact, { x: -10, y: -10 }), null);
 
   const overlapping = structuredClone(artifact);
@@ -33,6 +34,20 @@ test("isometric screen transform round-trips Diagram coordinates through pan and
   const recovered = transform.screenToDiagram(screenPoint, { z: 12 });
   assert.ok(Math.abs(recovered.x - diagramPoint.x) < 1e-9);
   assert.ok(Math.abs(recovered.y - diagramPoint.y) < 1e-9);
+});
+
+test("isometric transform keeps Diagram y on world Z and elevation on world Y", () => {
+  const transform = createIsometricTransform({ pan: { x: 30, y: -18 }, zoom: 1.6 });
+  const diagramPoint = { x: 182, y: 94, elevation: 12 };
+  const worldPoint = { x: 182, y: 12, z: 94 };
+  assert.deepEqual(transform.diagramToScreen(diagramPoint), transform.worldToScreen(worldPoint));
+  const recoveredWorld = transform.screenToWorld(transform.worldToScreen(worldPoint), { y: 12 });
+  assert.equal(recoveredWorld.x, worldPoint.x);
+  assert.equal(recoveredWorld.y, worldPoint.y);
+  assert.ok(Math.abs(recoveredWorld.z - worldPoint.z) < 1e-9);
+  const recoveredDiagram = transform.screenToDiagram(transform.diagramToScreen(diagramPoint), { z: 12 });
+  assert.equal(recoveredDiagram.x, diagramPoint.x);
+  assert.ok(Math.abs(recoveredDiagram.y - diagramPoint.y) < 1e-9);
 });
 
 test("pointer preview stays outside canonical Artifact and cancel creates no transaction", async () => {

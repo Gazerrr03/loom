@@ -8,6 +8,9 @@ import {
   createWorkspaceCanvas,
   hitTestNode,
 } from "../workspace/workspace-canvas.mjs";
+import { assertOrthogonalRoute } from "../contracts/route-geometry.mjs";
+import { routeToWorld } from "../contracts/coordinates.mjs";
+import { viewBasis } from "../workspace/workspace-view.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -48,6 +51,23 @@ test("isometric transform keeps Diagram y on world Z and elevation on world Y", 
   const recoveredDiagram = transform.screenToDiagram(transform.diagramToScreen(diagramPoint), { z: 12 });
   assert.equal(recoveredDiagram.x, diagramPoint.x);
   assert.ok(Math.abs(recoveredDiagram.y - diagramPoint.y) < 1e-9);
+});
+
+test("view changes reproject an XZ route without changing its world topology", () => {
+  const route = [
+    { x: 10, y: 20, elevation: 2 },
+    { x: 36, y: 20, elevation: 2 },
+    { x: 36, y: 48, elevation: 6 },
+  ];
+  assertOrthogonalRoute(route);
+  const defaultView = createIsometricTransform({ basis: viewBasis({ azimuthDeg: 45, elevationDeg: 35.264 }) });
+  const orbitView = createIsometricTransform({ basis: viewBasis({ azimuthDeg: 120, elevationDeg: 50 }) });
+  assert.notDeepEqual(route.map((point) => defaultView.diagramToScreen(point)), route.map((point) => orbitView.diagramToScreen(point)));
+  assert.deepEqual(routeToWorld(route), [
+    { x: 10, y: 2, z: 20 },
+    { x: 36, y: 2, z: 20 },
+    { x: 36, y: 6, z: 48 },
+  ]);
 });
 
 test("pointer preview stays outside canonical Artifact and cancel creates no transaction", async () => {

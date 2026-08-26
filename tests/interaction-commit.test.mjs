@@ -86,12 +86,24 @@ test("route and view commands remain field-scoped and invalid targets fail befor
       commandType: "layout.route.replace-points",
       targetId: "edge-split",
     }),
-    { points: [{ x: 30, y: 40 }, { x: 80, y: 100 }] },
+    { points: [{ x: 30, y: 40 }, { x: 80, y: 40 }, { x: 80, y: 100 }] },
   );
   const route = applyDomainCommand(artifact, commitPreview(routePreview).command);
   assert.deepEqual(route.layout.overrides.routes["edge-split"], {
-    points: [{ x: 30, y: 40 }, { x: 80, y: 100 }],
+    points: [{ x: 30, y: 40 }, { x: 80, y: 40 }, { x: 80, y: 100 }],
   });
+  assert.throws(
+    () => updatePreview(
+      beginPreview({
+        baseRevision: "sha256:golden-case-v1",
+        gestureId: "gesture-route-diagonal",
+        commandType: "layout.route.replace-points",
+        targetId: "edge-split",
+      }),
+      { points: [{ x: 30, y: 40 }, { x: 80, y: 100 }] },
+    ),
+    /only one world axis \(X or Z\).*diagonal segment/,
+  );
 
   const viewPreview = updatePreview(
     beginPreview({

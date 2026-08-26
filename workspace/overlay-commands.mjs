@@ -1,5 +1,6 @@
 import { assertDiagramArtifact } from "../core/artifact-store.mjs";
 import { createCoreState, applyCoreCommand, assertCoreState } from "../core/diagram-core.mjs";
+import { assertOrthogonalRoute } from "../contracts/route-geometry.mjs";
 import {
   beginPreview,
   commitPreview,
@@ -32,6 +33,7 @@ function assertPoints(points) {
       throw new Error(`route points[${index}].elevation must be finite`);
     }
   }
+  assertOrthogonalRoute(points, "route points");
 }
 
 /** Begin editing one route in Diagram coordinates without changing the Artifact. */
@@ -120,4 +122,3 @@ export function applyOverlayCommand(state, command, options = {}) {
 }
 
 export { assertAnnotationPatch };
-

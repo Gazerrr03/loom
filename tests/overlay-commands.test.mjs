@@ -43,6 +43,13 @@ test("route control points preview in Diagram space and commit once", async () =
     { x: 140, y: 96 },
   ]);
   assert.deepEqual(core.artifact.layout.overrides.routes["edge-split"], undefined);
+  assert.throws(
+    () => updateRouteEdit(
+      beginRouteEdit({ baseRevision: baseRevision(core), gestureId: "route-diagonal", edgeId: "edge-split" }),
+      [{ x: 120, y: 78 }, { x: 140, y: 96 }],
+    ),
+    /only one world axis \(X or Z\).*diagonal segment/,
+  );
 });
 
 test("annotation text and anchor edits preserve other annotations and node overrides", async () => {

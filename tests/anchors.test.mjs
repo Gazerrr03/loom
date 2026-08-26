@@ -14,9 +14,10 @@ test("route control points are Diagram-space and every Golden Case route resolve
   const artifact = await readJson("examples/flovvas-massing.diagram.json");
   const effective = mergeEffectiveLayout(artifact.layout, artifact.composition.defaultView);
   assert.doesNotThrow(() => assertRouteControlPoints(artifact, effective));
-  const moved = moveRouteControlPoint(effective.routes["edge-connect"], 1, { x: 274, y: 94, elevation: 3 }, artifact.composition.canvas);
-  assert.deepEqual(moved.points[1], { x: 274, y: 94, elevation: 3 });
+  const moved = moveRouteControlPoint(effective.routes["edge-connect"], 1, { x: 260, y: 105, elevation: 3 }, artifact.composition.canvas);
+  assert.deepEqual(moved.points[1], { x: 260, y: 105, elevation: 3 });
   assert.notDeepEqual(moved, effective.routes["edge-connect"]);
+  assert.throws(() => moveRouteControlPoint(effective.routes["edge-connect"], 1, { x: 274, y: 94 }, artifact.composition.canvas), /only one world axis \(X or Z\).*diagonal segment/);
   assert.throws(() => moveRouteControlPoint(effective.routes["edge-connect"], 1, { x: -1, y: 94 }, artifact.composition.canvas), /outside/);
 });
 
@@ -28,6 +29,7 @@ test("node and edge annotations follow Effective Layout while canvas anchors sta
   movedArtifact.layout.overrides.routes["edge-connect"] = {
     points: [
       { x: 242, y: 105 },
+      { x: 300, y: 105 },
       { x: 300, y: 98 },
     ],
   };

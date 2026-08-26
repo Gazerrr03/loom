@@ -22,6 +22,7 @@ import { createRouteEditor } from "./route-editor.mjs";
 import { createAnnotationEditor } from "./annotation-editor.mjs";
 import { resolveAnnotationAnchor } from "../contracts/anchors.mjs";
 import { assertPersistedDiagramBoundary } from "../contracts/persisted-boundary.mjs";
+import { assertOrthogonalRoute } from "../contracts/route-geometry.mjs";
 import {
   canRedoHistory,
   canUndoHistory,
@@ -35,6 +36,7 @@ import {
 const NS = "http://www.w3.org/2000/svg";
 const GOLDEN_CASE_URL = "../examples/flovvas-massing.diagram.json";
 const COMPONENT_CATALOG_URL = "../examples/flovvas-template-catalog.json";
+const WORLD_GRID_STEP = 20;
 const STAGE_COLORS = ["#6687a4", "#7a9b91", "#ad8c69", "#8b7baa", "#b27668", "#738e87", "#c17a4e"];
 const els = {
   app: document.getElementById("loom-workspace"),
@@ -220,6 +222,12 @@ function assertArtifact(value) {
   if (typeof value.id !== "string" || value.id.length === 0) throw new Error("Diagram id 缺失");
   if (!value.semantic || !Array.isArray(value.semantic.nodes) || !Array.isArray(value.semantic.edges) || !Array.isArray(value.semantic.groups)) throw new Error("Diagram semantic graph 不完整");
   if (!value.composition || !value.layout?.generated?.nodes || !value.layout?.generated?.routes || !value.layout?.generated?.groups) throw new Error("Diagram composition 或 layout 不完整");
+  for (const [edgeId, route] of Object.entries(value.layout.generated.routes)) {
+    assertOrthogonalRoute(route?.points, `layout.generated.routes.${edgeId}.points`);
+  }
+  for (const [edgeId, route] of Object.entries(value.layout.overrides?.routes ?? {})) {
+    if (route?.points !== undefined) assertOrthogonalRoute(route.points, `layout.overrides.routes.${edgeId}.points`);
+  }
   assertPersistedDiagramBoundary(value);
   return value;
 }
@@ -254,6 +262,24 @@ function currentViewTransform() {
     zoom: view.zoom,
     basis: viewBasis(view),
   });
+}
+
+function updateWorkspaceGrid() {
+  const pattern = document.getElementById("workspace-grid");
+  if (!pattern) return;
+  const transform = currentViewTransform();
+  const origin = transform.worldToScreen({ x: 0, y: 0, z: 0 });
+  const xStep = transform.worldToScreen({ x: WORLD_GRID_STEP, y: 0, z: 0 });
+  const zStep = transform.worldToScreen({ x: 0, y: 0, z: WORLD_GRID_STEP });
+  const matrix = [
+    (xStep.x - origin.x) / WORLD_GRID_STEP,
+    (xStep.y - origin.y) / WORLD_GRID_STEP,
+    (zStep.x - origin.x) / WORLD_GRID_STEP,
+    (zStep.y - origin.y) / WORLD_GRID_STEP,
+    origin.x,
+    origin.y,
+  ];
+  pattern.setAttribute("patternTransform", `matrix(${matrix.map((value) => value.toFixed(6)).join(" ")})`);
 }
 
 function refreshArtifactControllers() {
@@ -402,6 +428,7 @@ function routeStroke(edge, selected = false) {
 }
 
 function renderRoute(parent, edge, route) {
+  assertOrthogonalRoute(route.points, `layout.routes.${edge.id}.points`);
   const selected = state.selectedEdgeId === edge.id;
   const routePointsAttribute = pointString(route.points);
   const hitLine = svg("polyline", {
@@ -531,6 +558,7 @@ function renderCanvas() {
   }
   const displayArtifact = state.previewArtifact ?? state.artifact;
   const layout = effectiveLayout(displayArtifact);
+  updateWorkspaceGrid();
   const canvas = svg("rect", { x: 0, y: 0, width: 1100, height: 700, fill: "#faf8f2" });
   const grid = svg("rect", { x: 0, y: 0, width: 1100, height: 700, fill: "url(#workspace-grid)", opacity: .72 });
   const gutter = svg("rect", { x: 510, y: 0, width: 22, height: 700, fill: "#d8c2ac", opacity: .13 });

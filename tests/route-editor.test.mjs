@@ -17,8 +17,8 @@ test("route points resolve from Generated Layout plus Human Override", async () 
   assert.equal(points.length, 4);
   assert.deepEqual(points[0], { x: 96, y: 152 });
   const withOverride = structuredClone(artifact);
-  withOverride.layout.overrides.routes["edge-split"] = { points: [{ x: 1, y: 2 }, { x: 3, y: 4 }] };
-  assert.deepEqual(routePoints(withOverride, "edge-split"), [{ x: 1, y: 2 }, { x: 3, y: 4 }]);
+  withOverride.layout.overrides.routes["edge-split"] = { points: [{ x: 1, y: 2 }, { x: 3, y: 2 }] };
+  assert.deepEqual(routePoints(withOverride, "edge-split"), [{ x: 1, y: 2 }, { x: 3, y: 2 }]);
 });
 
 test("route point editing keeps orthogonal grid edges", () => {
@@ -32,6 +32,13 @@ test("route point editing keeps orthogonal grid edges", () => {
   for (let index = 1; index < horizontalCorner.length; index += 1) {
     assert.ok(horizontalCorner[index - 1].x === horizontalCorner[index].x || horizontalCorner[index - 1].y === horizontalCorner[index].y);
   }
+});
+
+test("route editor rejects an input route with a diagonal XZ segment", () => {
+  assert.throws(
+    () => editRoutePoint([{ x: 0, y: 0 }, { x: 10, y: 10 }], 0, { x: 4, y: 0 }),
+    /only one world axis \(X or Z\).*diagonal segment/,
+  );
 });
 
 test("preview edits one route point without mutating canonical artifact", async () => {
@@ -76,5 +83,8 @@ test("invalid route, point index, and point values are rejected", async () => {
   editor.cancel();
   const malformed = structuredClone(artifact);
   malformed.layout.generated.routes["edge-split"].points = [{ x: 1, y: 2 }];
-  assert.equal(createRouteEditor({ artifact: malformed }).pointerDown({ edgeId: "edge-split", pointIndex: 0 }).reason, "route-points-invalid");
+  assert.throws(
+    () => createRouteEditor({ artifact: malformed }).pointerDown({ edgeId: "edge-split", pointIndex: 0 }),
+    /layout\.generated\.routes\.edge-split\.points must contain at least two points/,
+  );
 });

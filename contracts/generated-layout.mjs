@@ -1,5 +1,6 @@
 import { assertComposition } from "./composition.mjs";
 import { evaluateLayoutConstraints } from "./layout-constraints.mjs";
+import { assertOrthogonalRoute } from "./route-geometry.mjs";
 import { assertSemanticGraph } from "./semantic-graph.mjs";
 
 const ENGINE_ID = "loom-deterministic-layout";
@@ -236,13 +237,25 @@ function routeForEdge(edge, nodes) {
   const target = nodes[edge.target];
   const sourceCenter = centerOf(source);
   const targetCenter = centerOf(target);
-  const points = [{ x: sourceCenter.x, y: sourceCenter.y, elevation: source.elevation ?? 0 }];
+  const sourcePoint = { x: sourceCenter.x, y: sourceCenter.y, elevation: source.elevation ?? 0 };
+  const targetPoint = { x: targetCenter.x, y: targetCenter.y, elevation: target.elevation ?? 0 };
+  const points = [sourcePoint];
   if (edge.visualRole === "compounding-loop") {
     const lift = Math.max(18, Math.abs(sourceCenter.y - targetCenter.y) / 2);
-    points.push({ x: sourceCenter.x + 12, y: sourceCenter.y - lift, elevation: Math.max(source.elevation ?? 0, target.elevation ?? 0) + 2 });
-    points.push({ x: targetCenter.x + 12, y: targetCenter.y - lift, elevation: Math.max(source.elevation ?? 0, target.elevation ?? 0) + 2 });
+    const loopY = Math.min(sourceCenter.y, targetCenter.y) - lift;
+    const loopElevation = Math.max(source.elevation ?? 0, target.elevation ?? 0) + 2;
+    // The loop is a deterministic X/Z dogleg: move toward the lift along the
+    // source world-Z line, bridge along world X, then return to the target.
+    points.push({ x: sourceCenter.x, y: loopY, elevation: source.elevation ?? 0 });
+    points.push({ x: targetCenter.x + 12, y: loopY, elevation: loopElevation });
+    points.push({ x: targetCenter.x + 12, y: targetCenter.y, elevation: loopElevation });
+  } else if (sourceCenter.x !== targetCenter.x && sourceCenter.y !== targetCenter.y) {
+    // X-first is deterministic and keeps the two Diagram plane directions
+    // aligned with world X/Z after the shared coordinate adapter.
+    points.push({ x: targetCenter.x, y: sourceCenter.y, elevation: source.elevation ?? 0 });
   }
-  points.push({ x: targetCenter.x, y: targetCenter.y, elevation: target.elevation ?? 0 });
+  points.push(targetPoint);
+  assertOrthogonalRoute(points, `generated route ${edge.id}.points`);
   return { points };
 }
 
@@ -275,11 +288,8 @@ export function assertGeneratedLayout(artifact, layout) {
   }
   for (const [id, node] of Object.entries(layout.generated.nodes)) assertRect(node, `generated.nodes.${id}`);
   for (const [id, route] of Object.entries(layout.generated.routes)) {
-    if (!Array.isArray(route.points) || route.points.length < 2) throw new Error(`generated.routes.${id}.points must contain at least two points`);
-    route.points.forEach((point, index) => {
-      assertFiniteNumber(point.x, `generated.routes.${id}.points[${index}].x`);
-      assertFiniteNumber(point.y, `generated.routes.${id}.points[${index}].y`);
-    });
+    if (!isRecord(route)) throw new Error(`generated.routes.${id} must be an object`);
+    assertOrthogonalRoute(route.points, `generated.routes.${id}.points`);
   }
   for (const [id, group] of Object.entries(layout.generated.groups)) assertRect(group.bounds, `generated.groups.${id}.bounds`);
   return layout;

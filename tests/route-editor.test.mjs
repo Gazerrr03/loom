@@ -43,6 +43,24 @@ test("route point editing resolves coincident neighbors from a non-stationary se
   assert.deepEqual(acrossSegment, [{ x: 0, y: 10 }, { x: 0, y: 10 }, { x: 10, y: 10 }]);
 });
 
+test("route point editing keeps longer coincident and collinear runs orthogonal", () => {
+  const corner = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }];
+  assert.deepEqual(
+    editRoutePoint(corner, 2, { x: 12, y: 0 }),
+    [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 12, y: 0 }, { x: 12, y: 0 }, { x: 12, y: 10 }],
+  );
+  assert.deepEqual(
+    editRoutePoint(corner, 2, { x: 10, y: -5 }),
+    [{ x: 0, y: -5 }, { x: 10, y: -5 }, { x: 10, y: -5 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+  );
+
+  const straight = [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 0 }, { x: 20, y: 0 }];
+  assert.deepEqual(
+    editRoutePoint(straight, 2, { x: 10, y: 5 }),
+    [{ x: 0, y: 5 }, { x: 10, y: 5 }, { x: 10, y: 5 }, { x: 20, y: 5 }],
+  );
+});
+
 test("route editor rejects an input route with a diagonal XZ segment", () => {
   assert.throws(
     () => editRoutePoint([{ x: 0, y: 0 }, { x: 10, y: 10 }], 0, { x: 4, y: 0 }),

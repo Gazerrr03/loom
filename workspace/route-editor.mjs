@@ -89,6 +89,40 @@ function resolveAxis(points, segmentIndex, preferredStep) {
   return "stationary";
 }
 
+function axisRange(points, pointIndex, axis, direction) {
+  const lastSegment = points.length - 2;
+  if (direction === "left") {
+    let firstSegment = pointIndex - 1;
+    while (firstSegment > 0) {
+      const previousAxis = axisBetween(points[firstSegment - 1], points[firstSegment]);
+      if (previousAxis !== axis && previousAxis !== "stationary") break;
+      firstSegment -= 1;
+    }
+    return { start: firstSegment, end: pointIndex };
+  }
+
+  let lastPoint = pointIndex + 1;
+  while (lastPoint < lastSegment + 1) {
+    const nextAxis = axisBetween(points[lastPoint], points[lastPoint + 1]);
+    if (nextAxis !== axis && nextAxis !== "stationary") break;
+    lastPoint += 1;
+  }
+  return { start: pointIndex, end: lastPoint };
+}
+
+function axisRun(points, pointIndex, axis) {
+  return {
+    start: axisRange(points, pointIndex, axis, "left").start,
+    end: axisRange(points, pointIndex, axis, "right").end,
+  };
+}
+
+function setRangeCoordinate(points, range, coordinate, value) {
+  for (let index = range.start; index <= range.end; index += 1) {
+    points[index][coordinate] = value;
+  }
+}
+
 /**
  * Move one point while keeping the route on horizontal/vertical grid edges.
  * Corner handles move the adjacent segment with them; endpoints slide along
@@ -121,29 +155,25 @@ export function editRoutePoint(points, pointIndex, target) {
   const moveX = Math.abs(desired.x - current.x) >= Math.abs(desired.y - current.y);
   if (incoming === "horizontal" && outgoing === "vertical") {
     if (moveX) {
-      next[index].x = desired.x;
-      next[index + 1].x = desired.x;
+      setRangeCoordinate(next, axisRange(next, index, outgoing, "right"), "x", desired.x);
     } else {
-      next[index].y = desired.y;
-      next[index - 1].y = desired.y;
+      setRangeCoordinate(next, axisRange(next, index, incoming, "left"), "y", desired.y);
     }
     return finish();
   }
   if (incoming === "vertical" && outgoing === "horizontal") {
     if (moveX) {
-      next[index].x = desired.x;
-      next[index - 1].x = desired.x;
+      setRangeCoordinate(next, axisRange(next, index, incoming, "left"), "x", desired.x);
     } else {
-      next[index].y = desired.y;
-      next[index + 1].y = desired.y;
+      setRangeCoordinate(next, axisRange(next, index, outgoing, "right"), "y", desired.y);
     }
     return finish();
   }
   if (incoming === "horizontal") {
     if (moveX) next[index].x = desired.x;
-    else [next[index - 1], next[index], next[index + 1]].forEach((point) => { point.y = desired.y; });
+    else setRangeCoordinate(next, axisRun(next, index, incoming), "y", desired.y);
   } else {
-    if (moveX) [next[index - 1], next[index], next[index + 1]].forEach((point) => { point.x = desired.x; });
+    if (moveX) setRangeCoordinate(next, axisRun(next, index, outgoing), "x", desired.x);
     else next[index].y = desired.y;
   }
   return finish();

@@ -8,7 +8,7 @@ import {
 
 test("route geometry checks the shared world XZ projection while elevation stays independent", () => {
   assert.deepEqual(ROUTE_GRID_CONTRACT, {
-    coordinateSpace: "world-xz",
+    coordinateSpace: "diagram",
     plane: "xz",
     axes: ["x", "z"],
     gridStep: 1,

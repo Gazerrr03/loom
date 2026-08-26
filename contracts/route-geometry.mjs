@@ -13,13 +13,22 @@ import { diagramToWorld, routeToWorld } from "./coordinates.mjs";
 export const ROUTE_GRID_SIZE = 1;
 
 export const ROUTE_GRID_CONTRACT = Object.freeze({
-  coordinateSpace: "world-xz",
+  coordinateSpace: "diagram",
   plane: "xz",
   axes: Object.freeze(["x", "z"]),
   gridStep: ROUTE_GRID_SIZE,
   heightAxis: "y",
   elevationPolicy: "independent",
 });
+
+function worldAxisBetween(leftWorld, rightWorld, path) {
+  const xChanged = leftWorld.x !== rightWorld.x;
+  const zChanged = leftWorld.z !== rightWorld.z;
+  if (xChanged && zChanged) {
+    throw new Error(`${path} must change along only one world axis (X or Z); diagonal segment is not allowed`);
+  }
+  return xChanged ? "x" : zChanged ? "z" : "stationary";
+}
 
 /**
  * Return the world-plane axis changed by one Diagram route segment.
@@ -29,12 +38,7 @@ export const ROUTE_GRID_CONTRACT = Object.freeze({
 export function routeAxisBetween(left, right, path = "route.segment") {
   const leftWorld = diagramToWorld(left, { path: `${path}.from` });
   const rightWorld = diagramToWorld(right, { path: `${path}.to` });
-  const xChanged = leftWorld.x !== rightWorld.x;
-  const zChanged = leftWorld.z !== rightWorld.z;
-  if (xChanged && zChanged) {
-    throw new Error(`${path} must change along only one world axis (X or Z); diagonal segment is not allowed`);
-  }
-  return xChanged ? "x" : zChanged ? "z" : "stationary";
+  return worldAxisBetween(leftWorld, rightWorld, path);
 }
 
 /** Assert that every consecutive route segment is an XZ grid edge. */
@@ -44,13 +48,7 @@ export function assertOrthogonalRoute(points, path = "route.points") {
   }
   const worldPoints = routeToWorld(points, { path });
   for (let index = 1; index < worldPoints.length; index += 1) {
-    const previous = worldPoints[index - 1];
-    const current = worldPoints[index];
-    const xChanged = previous.x !== current.x;
-    const zChanged = previous.z !== current.z;
-    if (xChanged && zChanged) {
-      throw new Error(`${path}[${index}] must change along only one world axis (X or Z); diagonal segment is not allowed`);
-    }
+    worldAxisBetween(worldPoints[index - 1], worldPoints[index], `${path}[${index}]`);
   }
   return points;
 }

@@ -77,10 +77,11 @@ function inspectPersistedKeys(value, path, seen = new Set()) {
   for (const [key, child] of Object.entries(value)) {
     const normalized = normalizedKey(key);
     const fieldPath = childPath(path, key);
-    // exportSettings has its own strict persisted contract. Its canonical
-    // camera is data, not Renderer-private state, so leave this subtree to
-    // assertExportSettings instead of applying the generic runtime-key scan.
-    if (path === "artifact" && normalized === "exportsettings") continue;
+    // Only the canonical exportSettings property has its own strict
+    // persisted contract. Its camera is data, not Renderer-private state, so
+    // leave that exact subtree to assertExportSettings instead of applying
+    // the generic runtime-key scan. Aliased spellings must remain inspectable.
+    if (path === "artifact" && key === "exportSettings") continue;
     if (UNSUPPORTED_COORDINATE_KEYS.has(normalized)) {
       throw contractError(
         "unsupported-coordinate-space",
